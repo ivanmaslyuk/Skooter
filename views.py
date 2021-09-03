@@ -70,6 +70,7 @@ class HBox(View):
         BEGIN = 'BEGIN'
         END = 'END'
         SPACE_BETWEEN = 'SPACE_BETWEEN'
+        SPACE_AROUND = 'SPACE_AROUND'
 
     def __init__(self, *items: View):
         self._items: Tuple[View] = items
@@ -121,8 +122,11 @@ class HBox(View):
                 item_width = item_info['width']
                 item_height = item_info['height']
 
+                if self._justify == HBox.JustifyRule.SPACE_AROUND:
+                    content_x += leftover_width / (len(row) + 1)
+
                 if self._justify == HBox.JustifyRule.SPACE_BETWEEN and idx != 0:
-                    content_x += leftover_width / (len(row) - 1 )
+                    content_x += leftover_width / (len(row) - 1)
 
                 if self._alignment == HBox.Alignment.TOP:
                     item.draw(canvas, x + content_x, y + content_y)
@@ -130,6 +134,9 @@ class HBox(View):
                     item.draw(canvas, x + content_x, y + content_y + (max_height - item_height))
                 elif self._alignment == HBox.Alignment.CENTER:
                     item.draw(canvas, x + content_x, y + content_y + (max_height - item_height) / 2)
+
+                if self._justify == HBox.JustifyRule.SPACE_AROUND and idx == len(row) - 1:
+                    content_x += leftover_width / (len(row) + 1)
 
                 content_x += item_width + self._spacing
 

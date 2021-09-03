@@ -44,7 +44,7 @@ class MyView(View):
                 MyButton('Button 19'),
             ).spacing(6).width(640).alignment(
                 HBox.Alignment.CENTER
-            ).wrap(True).justify(HBox.JustifyRule.SPACE_BETWEEN)
+            ).wrap(True).justify(HBox.JustifyRule.SPACE_AROUND)
         )
 
 
