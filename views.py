@@ -11,13 +11,14 @@ class Rectangle(View):
         self._background = '#ffffff'
         self._width = width
         self._height = height
+        self._opacity = 1
 
     def draw(self, canvas: skia.Surface, x: float, y: float):
         x += self._x
         y += self._y
         rect = skia.Rect(x, y, x + self._width, y + self._height)
         r, g, b = hex_to_rgb(self._background)
-        paint = skia.Paint(Color=skia.Color(r, g, b))
+        paint = skia.Paint(Color=skia.Color(r, g, b, round(255 * self._opacity)))
         canvas.drawRect(rect, paint)
 
         self.draw_children(canvas, x, y)
@@ -27,6 +28,10 @@ class Rectangle(View):
 
     def background(self, color: str):
         self._background = color
+        return self
+
+    def opacity(self, opacity: float):
+        self._opacity = opacity
         return self
 
 
@@ -156,7 +161,15 @@ class HBox(View):
         self.draw_children(canvas, x, y)
 
     def get_bounding_rect(self) -> BoundingRect:
-        return BoundingRect(0, 0, 0, 0)  # todo implement
+        width = self._width
+        if width is None:
+            width = 0
+
+        height = self._height
+        if height is None:
+            height = 0
+
+        return BoundingRect(0, 0, width, height)  # todo implement
 
     def alignment(self, alignment):
         self._alignment = alignment
@@ -241,20 +254,22 @@ class VBox(View):
         content_y = self._spacing
         for column_info in columns:
             column = column_info['column']
-            leftover_height = self._height - column_info['column_items_height']
             for idx, item_info in enumerate(column):
                 item = item_info['item']
                 item_width = item_info['width']
                 item_height = item_info['height']
 
-                if self._justify == VBox.JustifyRule.END and idx == 0:
-                    content_y += leftover_height
+                if self._height:
+                    leftover_height = self._height - column_info['column_items_height']
 
-                if self._justify == VBox.JustifyRule.SPACE_AROUND:
-                    content_y += leftover_height / (len(column) + 1)
+                    if self._justify == VBox.JustifyRule.END and idx == 0:
+                        content_y += leftover_height
 
-                if self._justify == VBox.JustifyRule.SPACE_BETWEEN and idx != 0:
-                    content_y += leftover_height / (len(column) - 1)
+                    if self._justify == VBox.JustifyRule.SPACE_AROUND:
+                        content_y += leftover_height / (len(column) + 1)
+
+                    if self._justify == VBox.JustifyRule.SPACE_BETWEEN and idx != 0:
+                        content_y += leftover_height / (len(column) - 1)
 
                 if self._alignment == VBox.Alignment.BEGIN:
                     item.draw(canvas, x + content_x, y + content_y)

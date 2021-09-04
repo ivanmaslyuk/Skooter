@@ -55,11 +55,16 @@ class Header(View):
     def body(self):
         return (
             HBox(
-                Text('My App').color('#ffffff').size(20),
+                VBox(
+                    Text('My App').color('#fff').size(14),
+                    Text('Subtitle').color('#fff').size(10)
+                ).spacing(6).children(
+                    Rectangle(50, 50).background('#f0f').opacity(0.3)
+                ),
                 Rectangle(50, 50).background('#800')
             ).width(640).alignment(HBox.Alignment.CENTER).justify(HBox.JustifyRule.SPACE_BETWEEN)
         )
 
 
-app = App(MyView())
+app = App(Header())
 app.execute()
