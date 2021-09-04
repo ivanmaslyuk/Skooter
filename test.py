@@ -42,9 +42,11 @@ class MyView(View):
                 MyButton('Button 17'),
                 MyButton('Button 18'),
                 MyButton('Button 19'),
-            ).spacing(6).width(640).alignment(
-                HBox.Alignment.CENTER
-            ).wrap(True).justify(HBox.JustifyRule.SPACE_AROUND)
+            ).spacing(6)
+            .width(640)
+            .alignment(HBox.Alignment.CENTER)
+            .wrap(True)
+            .justify(HBox.JustifyRule.SPACE_BETWEEN)
         )
 
 

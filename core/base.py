@@ -1,4 +1,5 @@
 import dataclasses
+from typing import Optional
 
 import skia
 
@@ -21,7 +22,7 @@ class View:
         return None
 
     def draw(self, canvas: skia.Surface, x: float, y: float):
-        body = self.body()
+        body: Optional[View] = self.body()
         if not body:
             raise NotImplementedError('Views that inherit from View must implement body() or override draw().')
 
@@ -53,7 +54,7 @@ class View:
         return self
 
     def get_bounding_rect(self) -> BoundingRect:
-        body = self.body()
+        body: Optional[View] = self.body()
         if not body:
             raise NotImplementedError('Override get_bounding_rect() when using custom draw() method.')
 
