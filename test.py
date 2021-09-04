@@ -1,7 +1,7 @@
 import random
 
 from core.app import App
-from views import View, Rectangle, Text, HBox
+from views import View, Rectangle, Text, HBox, VBox
 
 
 class MyButton(View):
@@ -13,7 +13,7 @@ class MyButton(View):
     def body(self):
         return (
             Rectangle(width=self.w, height=self.h).children(
-                Text(self.text).color('#00ff00')
+                Text(self.text).color('#fff')
             ).background('#f00')
         )
 
@@ -41,10 +41,11 @@ class MyView(View):
                 MyButton('Button 16'),
                 MyButton('Button 17'),
                 MyButton('Button 18'),
-                MyButton('Button 19'),
+                MyButton('Кнопка 19'),
             ).spacing(6)
             .width(640)
-            .alignment(HBox.Alignment.CENTER)
+            .height(480)
+            .alignment(HBox.Alignment.END)
             .wrap(True)
             .justify(HBox.JustifyRule.SPACE_BETWEEN)
         )
