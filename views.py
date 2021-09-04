@@ -2,7 +2,7 @@ from typing import Tuple
 
 import skia
 
-from color import hex_to_rgb
+from webcolors import hex_to_rgb
 from core.base import View, BoundingRect
 
 
@@ -34,13 +34,14 @@ class Text(View):
     def __init__(self, text):
         self._text = text
         self._color = '#000000'
+        self._size = 14
 
     def draw(self, canvas: skia.Surface, x: float, y: float):
         x += self._x
         y += self._y
         r, g, b = hex_to_rgb(self._color)
         paint = skia.Paint(Color=skia.Color(r, g, b))
-        font = skia.Font(None, 14)
+        font = skia.Font(None, self._size)
         bounds = skia.Rect()
         font.measureText(self._text, skia.TextEncoding.kUTF8, paint=paint, bounds=bounds)
         canvas.drawString(self._text, x, y + bounds.height(), font, paint)
@@ -50,13 +51,17 @@ class Text(View):
     def get_bounding_rect(self) -> BoundingRect:
         r, g, b = hex_to_rgb(self._color)
         paint = skia.Paint(Color=skia.Color(r, g, b))
-        font = skia.Font(None, 14)
+        font = skia.Font(None, self._size)
         bounds = skia.Rect()
         font.measureText(self._text, skia.TextEncoding.kUTF8, paint=paint, bounds=bounds)
         return BoundingRect(0, 0, bounds.width(), bounds.height())
 
     def color(self, color: str):
         self._color = color
+        return self
+
+    def size(self, size: int):
+        self._size = size
         return self
 
 

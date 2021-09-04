@@ -14,7 +14,7 @@ class MyButton(View):
         return (
             Rectangle(width=self.w, height=self.h).children(
                 Text(self.text).color('#00ff00')
-            ).background('#ff0000')
+            ).background('#f00')
         )
 
 
@@ -47,6 +47,16 @@ class MyView(View):
             .alignment(HBox.Alignment.CENTER)
             .wrap(True)
             .justify(HBox.JustifyRule.SPACE_BETWEEN)
+        )
+
+
+class Header(View):
+    def body(self):
+        return (
+            HBox(
+                Text('My App').color('#ffffff').size(20),
+                Rectangle(50, 50).background('#800')
+            ).width(640).alignment(HBox.Alignment.CENTER).justify(HBox.JustifyRule.SPACE_BETWEEN)
         )
 
 

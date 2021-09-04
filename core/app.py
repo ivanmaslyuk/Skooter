@@ -1,4 +1,6 @@
 import contextlib
+import time
+
 import glfw
 import skia
 from OpenGL import GL
@@ -44,7 +46,9 @@ class App:
 
             with skia_surface(window) as surface:
                 with surface as canvas:
+                    start_time = time.time()
                     self.root_view.draw(canvas, 0, 0)
+                    print('Draw time:', round((time.time() - start_time) * 1000, 5), 'ms')
                 surface.flushAndSubmit()
                 glfw.swap_buffers(window)
 
