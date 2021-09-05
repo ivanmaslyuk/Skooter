@@ -66,5 +66,5 @@ class Header(View):
         )
 
 
-app = App(Header())
+app = App(MyView())
 app.execute()
