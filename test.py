@@ -19,8 +19,8 @@ class MyButton(View):
 
 
 class MyView(View):
-    def body(self):
-        return (
+    def __init__(self):
+        self.__body = (
             HBox(
                 MyButton('Button 1'),
                 MyButton('Button 2'),
@@ -33,7 +33,7 @@ class MyView(View):
                 MyButton('Button 9'),
                 MyButton('Button 10'),
                 MyButton('Button 11'),
-                Text('Hello world this is a library').color('#ffffff'),
+                Text('Hello world this is a library'),
                 MyButton('Button 12'),
                 MyButton('Button 13'),
                 MyButton('Button 14'),
@@ -43,28 +43,33 @@ class MyView(View):
                 MyButton('Button 18'),
                 MyButton('Кнопка 19'),
             ).spacing(6)
-            .width(640)
-            .height(480)
+            # .width(640)
+            # .height(480)
             .alignment(HBox.Alignment.END)
             .wrap(True)
             .justify(HBox.JustifyRule.SPACE_BETWEEN)
         )
 
+    def body(self):
+        return self.__body
+
 
 class Header(View):
     def body(self):
+        logo = VBox(
+            Text('My App').size(14),
+            Text('Subtitle').size(10),
+        ).spacing(2)
+        rect = logo.get_bounding_rect()
         return (
             HBox(
-                VBox(
-                    Text('My App').color('#fff').size(14),
-                    Text('Subtitle').color('#fff').size(10)
-                ).spacing(6).children(
-                    Rectangle(50, 50).background('#f0f').opacity(0.3)
+                logo.children(
+                    Rectangle(rect.width, rect.height).background('#f0f').opacity(0.3)
                 ),
                 Rectangle(50, 50).background('#800')
-            ).width(640).alignment(HBox.Alignment.CENTER).justify(HBox.JustifyRule.SPACE_BETWEEN)
+            ).alignment(HBox.Alignment.CENTER).justify(HBox.JustifyRule.SPACE_BETWEEN)
         )
 
 
-app = App(MyView())
+app = App(VBox(Header(), MyView()).width(640).height(480))
 app.execute()

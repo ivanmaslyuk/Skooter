@@ -6,6 +6,7 @@ import skia
 from OpenGL import GL
 
 WIDTH, HEIGHT = 640, 480
+VIEW = None
 
 
 def window_size_callback(window, width, height):
@@ -13,6 +14,8 @@ def window_size_callback(window, width, height):
     global WIDTH, HEIGHT
     WIDTH = width
     HEIGHT = height
+    # print(width, height)
+    draw(window, VIEW)
 
 
 @contextlib.contextmanager
@@ -45,22 +48,29 @@ def skia_surface(window):
     context.abandonContext()
 
 
+def draw(window, view):
+    with skia_surface(window) as surface:
+        with surface as canvas:
+            canvas.scale(*glfw.get_window_content_scale(window))
+            start_time = time.time()
+            view.draw(canvas, 0, 0, WIDTH, HEIGHT)
+            # print('Draw time:', round((time.time() - start_time) * 1000, 5), 'ms')
+        surface.flushAndSubmit()
+        glfw.swap_buffers(window)
+        GL.glClear(GL.GL_COLOR_BUFFER_BIT)
+
+
 class App:
     def __init__(self, root_view):
         self.root_view = root_view
+        global VIEW
+        VIEW = self.root_view
 
     def execute(self):
         with glfw_window() as window:
+            GL.glClearColor(255, 255, 255, 255)
             GL.glClear(GL.GL_COLOR_BUFFER_BIT)
 
             while glfw.get_key(window, glfw.KEY_ESCAPE) != glfw.PRESS and not glfw.window_should_close(window):
-                with skia_surface(window) as surface:
-                    with surface as canvas:
-                        canvas.scale(*glfw.get_window_content_scale(window))
-                        start_time = time.time()
-                        self.root_view.draw(canvas, 0, 0)
-                        print('Draw time:', round((time.time() - start_time) * 1000, 5), 'ms')
-                    surface.flushAndSubmit()
-                    glfw.swap_buffers(window)
-
-                    glfw.wait_events()
+                draw(window, self.root_view)
+                glfw.wait_events()

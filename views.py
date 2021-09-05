@@ -3,7 +3,7 @@ from typing import Tuple
 import skia
 
 from webcolors import hex_to_rgb
-from core.base import View, BoundingRect
+from core.base import View, Rect
 
 
 class Rectangle(View):
@@ -13,7 +13,7 @@ class Rectangle(View):
         self._height = height
         self._opacity = 1
 
-    def draw(self, canvas: skia.Surface, x: float, y: float):
+    def draw(self, canvas: skia.Surface, x: float, y: float, width: float, height: float):
         x += self._x
         y += self._y
         rect = skia.Rect(x, y, x + self._width, y + self._height)
@@ -21,10 +21,10 @@ class Rectangle(View):
         paint = skia.Paint(Color=skia.Color(r, g, b, round(255 * self._opacity)))
         canvas.drawRect(rect, paint)
 
-        self.draw_children(canvas, x, y)
+        self.draw_children(canvas, x, y, width, height)
 
     def get_bounding_rect(self):
-        return BoundingRect(0, 0, self._width, self._height)
+        return Rect(0, 0, self._width, self._height)
 
     def background(self, color: str):
         self._background = color
@@ -41,7 +41,7 @@ class Text(View):
         self._color = '#000000'
         self._size = 14
 
-    def draw(self, canvas: skia.Surface, x: float, y: float):
+    def draw(self, canvas: skia.Surface, x: float, y: float, width: float, height: float):
         x += self._x
         y += self._y
         r, g, b = hex_to_rgb(self._color)
@@ -51,15 +51,15 @@ class Text(View):
         font.measureText(self._text, skia.TextEncoding.kUTF8, paint=paint, bounds=bounds)
         canvas.drawString(self._text, x, y + bounds.height(), font, paint)
 
-        self.draw_children(canvas, x, y)
+        self.draw_children(canvas, x, y, width, height)
 
-    def get_bounding_rect(self) -> BoundingRect:
+    def get_bounding_rect(self) -> Rect:
         r, g, b = hex_to_rgb(self._color)
         paint = skia.Paint(Color=skia.Color(r, g, b))
         font = skia.Font(None, self._size)
         bounds = skia.Rect()
         font.measureText(self._text, skia.TextEncoding.kUTF8, paint=paint, bounds=bounds)
-        return BoundingRect(0, 0, bounds.width(), bounds.height())
+        return Rect(0, 0, bounds.width(), bounds.height())
 
     def color(self, color: str):
         self._color = color
@@ -91,19 +91,20 @@ class HBox(View):
         self._width = None
         self._wrap = False
 
-    def draw(self, canvas: skia.Surface, x: float, y: float):
-        x += self._x
-        y += self._y
+        self._view_width = 0
+        self._view_height = 0
 
+    def _lay_out_items(self, canvas: skia.Surface, x: float, y: float, width: float, height: float, draw: bool = False):
         content_x = self._spacing
         max_height = 0
         rows = []
         row = []
+        view_width = self._width or width
         for item in self._items:
             bounding_rect = item.get_bounding_rect()
             max_height = max(max_height, bounding_rect.height)
 
-            if self._wrap and self._width and content_x + self._spacing + bounding_rect.width > self._width:
+            if self._wrap and view_width and content_x + self._spacing + bounding_rect.width > view_width:
                 rows.append({
                     'row': row,
                     'row_items_width': content_x,
@@ -128,7 +129,7 @@ class HBox(View):
         content_y = self._spacing
         for row_info in rows:
             row = row_info['row']
-            leftover_width = self._width - row_info['row_items_width']
+            leftover_width = view_width - row_info['row_items_width']
             for idx, item_info in enumerate(row):
                 item = item_info['item']
                 item_width = item_info['width']
@@ -143,33 +144,40 @@ class HBox(View):
                 if self._justify == HBox.JustifyRule.SPACE_BETWEEN and idx != 0:
                     content_x += leftover_width / (len(row) - 1)
 
-                if self._alignment == HBox.Alignment.BEGIN:
-                    item.draw(canvas, x + content_x, y + content_y)
-                elif self._alignment == HBox.Alignment.END:
-                    item.draw(canvas, x + content_x, y + content_y + (max_height - item_height))
-                elif self._alignment == HBox.Alignment.CENTER:
-                    item.draw(canvas, x + content_x, y + content_y + (max_height - item_height) / 2)
+                if draw:
+                    if self._alignment == HBox.Alignment.BEGIN:
+                        item.draw(canvas, x + content_x, y + content_y, width, height)
+                    elif self._alignment == HBox.Alignment.END:
+                        item.draw(canvas, x + content_x, y + content_y + (max_height - item_height), width, height)
+                    elif self._alignment == HBox.Alignment.CENTER:
+                        item.draw(canvas, x + content_x, y + content_y + (max_height - item_height) / 2, width, height)
 
                 if self._justify == HBox.JustifyRule.SPACE_AROUND and idx == len(row) - 1:
                     content_x += leftover_width / (len(row) + 1)
 
                 content_x += item_width + self._spacing
 
+            self._view_width = max(self._view_width, content_x)
             content_y += max_height + self._spacing
+            self._view_height = content_y
             content_x = self._spacing
 
-        self.draw_children(canvas, x, y)
+    def draw(self, canvas: skia.Surface, x: float, y: float, width: float, height: float):
+        x += self._x
+        y += self._y
 
-    def get_bounding_rect(self) -> BoundingRect:
+        self._lay_out_items(canvas, x, y, width, height, draw=True)
+        self.draw_children(canvas, x, y, width, height)
+
+    def get_bounding_rect(self) -> Rect:
         width = self._width
-        if width is None:
-            width = 0
-
         height = self._height
-        if height is None:
-            height = 0
+        if height is None or width is None:
+            self._lay_out_items(None, 0, 0, 640, 480)
+            height = height or self._view_height
+            width = width or self._view_width
 
-        return BoundingRect(0, 0, width, height)  # todo implement
+        return Rect(0, 0, width, height)
 
     def alignment(self, alignment):
         self._alignment = alignment
@@ -217,10 +225,10 @@ class VBox(View):
         self._width = None
         self._wrap = False
 
-    def draw(self, canvas: skia.Surface, x: float, y: float):
-        x += self._x
-        y += self._y
+        self._view_height = 0
+        self._view_width = 0
 
+    def _lay_out_items(self, canvas: skia.Surface, x: float, y: float, width: float, height: float, draw: bool = False):
         content_y = self._spacing
         max_width = 0
         columns = []
@@ -252,6 +260,8 @@ class VBox(View):
 
         content_x = self._spacing
         content_y = self._spacing
+        self._view_height = 0
+        self._view_width = 0
         for column_info in columns:
             column = column_info['column']
             for idx, item_info in enumerate(column):
@@ -271,25 +281,34 @@ class VBox(View):
                     if self._justify == VBox.JustifyRule.SPACE_BETWEEN and idx != 0:
                         content_y += leftover_height / (len(column) - 1)
 
-                if self._alignment == VBox.Alignment.BEGIN:
-                    item.draw(canvas, x + content_x, y + content_y)
-                elif self._alignment == VBox.Alignment.END:
-                    item.draw(canvas, x + content_x + (max_width - item_width), y + content_y)
-                elif self._alignment == VBox.Alignment.CENTER:
-                    item.draw(canvas, x + content_x + (max_width - item_width) / 2, y + content_y)
+                if draw:
+                    if self._alignment == VBox.Alignment.BEGIN:
+                        item.draw(canvas, x + content_x, y + content_y, width, height)
+                    elif self._alignment == VBox.Alignment.END:
+                        item.draw(canvas, x + content_x + (max_width - item_width), y + content_y, width, height)
+                    elif self._alignment == VBox.Alignment.CENTER:
+                        item.draw(canvas, x + content_x + (max_width - item_width) / 2, y + content_y, width, height)
 
                 if self._justify == VBox.JustifyRule.SPACE_AROUND and idx == len(column) - 1:
                     content_y += leftover_height / (len(column) + 1)
 
                 content_y += item_height + self._spacing
 
+            self._view_height = max(self._view_height, content_y)
             content_x += max_width + self._spacing
+            self._view_width = content_x
             content_y = self._spacing
 
-        self.draw_children(canvas, x, y)
+    def draw(self, canvas: skia.Surface, x: float, y: float, width: float, height: float):
+        x += self._x
+        y += self._y
 
-    def get_bounding_rect(self) -> BoundingRect:
-        return BoundingRect(0, 0, 0, 0)  # todo implement
+        self._lay_out_items(canvas, x, y, width, height, draw=True)
+        self.draw_children(canvas, x, y, width, height)
+
+    def get_bounding_rect(self) -> Rect:
+        self._lay_out_items(None, 0, 0, 640, 480)
+        return Rect(0, 0, self._view_width, self._view_height)  # todo implement
 
     def alignment(self, alignment):
         self._alignment = alignment
