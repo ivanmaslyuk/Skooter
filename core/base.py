@@ -3,6 +3,8 @@ from typing import Optional
 
 import skia
 
+CONTAINER_STACK = []
+
 
 @dataclasses.dataclass
 class Rect:
@@ -13,16 +15,31 @@ class Rect:
 
 
 class View:
-    _children = []
-    _clicked = None
-    _x = 0
-    _y = 0
+    def __init__(self):
+        self.parent: View = CONTAINER_STACK[-1] if CONTAINER_STACK else None
+        if self.parent:
+            self.parent.append_child(self)
+        self._children = []
+        self._x = 0
+        self._y = 0
+
+    def __enter__(self):
+        CONTAINER_STACK.append(self)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        CONTAINER_STACK.pop()
+
+    def append_child(self, child):
+        self._children.append(child)
 
     def body(self):
         return None
 
-    def draw(self, canvas: skia.Surface, x: float, y: float, width: float, height: float):
-        body: Optional[View] = self.body()
+    def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
+        self._children *= 0
+        with self:
+            body: Optional[View] = self.body()
         if not body:
             raise NotImplementedError('Views that inherit from View must implement body() or override draw().')
 

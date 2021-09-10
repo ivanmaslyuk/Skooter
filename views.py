@@ -8,12 +8,13 @@ from core.base import View, Rect
 
 class Rectangle(View):
     def __init__(self, width=0, height=0):
+        super().__init__()
         self._background = '#ffffff'
         self._width = width
         self._height = height
         self._opacity = 1
 
-    def draw(self, canvas: skia.Surface, x: float, y: float, width: float, height: float):
+    def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
         x += self._x
         y += self._y
         rect = skia.Rect(x, y, x + self._width, y + self._height)
@@ -37,11 +38,12 @@ class Rectangle(View):
 
 class Text(View):
     def __init__(self, text):
+        super().__init__()
         self._text = text
         self._color = '#000000'
         self._size = 14
 
-    def draw(self, canvas: skia.Surface, x: float, y: float, width: float, height: float):
+    def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
         x += self._x
         y += self._y
         r, g, b = hex_to_rgb(self._color)
@@ -82,8 +84,8 @@ class HBox(View):
         SPACE_BETWEEN = 'SPACE_BETWEEN'
         SPACE_AROUND = 'SPACE_AROUND'
 
-    def __init__(self, *items: View):
-        self._items: Tuple[View] = items
+    def __init__(self):
+        super().__init__()
         self._alignment = HBox.Alignment.BEGIN
         self._justify = HBox.JustifyRule.BEGIN
         self._spacing = 0
@@ -94,13 +96,13 @@ class HBox(View):
         self._view_width = 0
         self._view_height = 0
 
-    def _lay_out_items(self, canvas: skia.Surface, x: float, y: float, width: float, height: float, draw: bool = False):
+    def _lay_out_items(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float, draw: bool = False):
         content_x = self._spacing
         max_height = 0
         rows = []
         row = []
         view_width = self._width or width
-        for item in self._items:
+        for item in self._children:
             bounding_rect = item.get_bounding_rect()
             max_height = max(max_height, bounding_rect.height)
 
@@ -162,12 +164,11 @@ class HBox(View):
             self._view_height = content_y
             content_x = self._spacing
 
-    def draw(self, canvas: skia.Surface, x: float, y: float, width: float, height: float):
+    def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
         x += self._x
         y += self._y
 
         self._lay_out_items(canvas, x, y, width, height, draw=True)
-        self.draw_children(canvas, x, y, width, height)
 
     def get_bounding_rect(self) -> Rect:
         width = self._width
@@ -216,8 +217,8 @@ class VBox(View):
         SPACE_BETWEEN = 'SPACE_BETWEEN'
         SPACE_AROUND = 'SPACE_AROUND'
 
-    def __init__(self, *items: View):
-        self._items: Tuple[View] = items
+    def __init__(self):
+        super().__init__()
         self._alignment = VBox.Alignment.BEGIN
         self._justify = VBox.JustifyRule.BEGIN
         self._spacing = 0
@@ -228,12 +229,12 @@ class VBox(View):
         self._view_height = 0
         self._view_width = 0
 
-    def _lay_out_items(self, canvas: skia.Surface, x: float, y: float, width: float, height: float, draw: bool = False):
+    def _lay_out_items(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float, draw: bool = False):
         content_y = self._spacing
         max_width = 0
         columns = []
         column = []
-        for item in self._items:
+        for item in self._children:
             bounding_rect = item.get_bounding_rect()
             max_width = max(max_width, bounding_rect.width)
 
@@ -299,16 +300,15 @@ class VBox(View):
             self._view_width = content_x
             content_y = self._spacing
 
-    def draw(self, canvas: skia.Surface, x: float, y: float, width: float, height: float):
+    def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
         x += self._x
         y += self._y
 
         self._lay_out_items(canvas, x, y, width, height, draw=True)
-        self.draw_children(canvas, x, y, width, height)
 
     def get_bounding_rect(self) -> Rect:
         self._lay_out_items(None, 0, 0, 640, 480)
-        return Rect(0, 0, self._view_width, self._view_height)  # todo implement
+        return Rect(0, 0, self._view_width, self._view_height)
 
     def alignment(self, alignment):
         self._alignment = alignment

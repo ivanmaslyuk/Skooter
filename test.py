@@ -1,54 +1,25 @@
-import random
-
 from core.app import App
 from views import View, Rectangle, Text, HBox, VBox
 
 
 class MyButton(View):
     def __init__(self, text):
+        super().__init__()
         self.text = text
-        self.h = random.choice([30, 60, 80])
-        self.w = random.choice([60, 80, 100])
 
     def body(self):
-        return (
-            Rectangle(width=self.w, height=self.h).children(
-                Text(self.text).color('#fff')
-            ).background('#f00')
-        )
+        with Rectangle(80, 35).background('#00f') as root:
+            Text(self.text).color('#fff')
+        return root
 
 
 class MyView(View):
     def __init__(self):
-        self.__body = (
-            HBox(
-                MyButton('Button 1'),
-                MyButton('Button 2'),
-                MyButton('Button 3'),
-                MyButton('Button 4'),
-                MyButton('Button 5'),
-                MyButton('Button 6'),
-                MyButton('Button 7'),
-                MyButton('Button 8'),
-                MyButton('Button 9'),
-                MyButton('Button 10'),
-                MyButton('Button 11'),
-                Text('Hello world this is a library'),
-                MyButton('Button 12'),
-                MyButton('Button 13'),
-                MyButton('Button 14'),
-                MyButton('Button 15'),
-                MyButton('Button 16'),
-                MyButton('Button 17'),
-                MyButton('Button 18'),
-                MyButton('Кнопка 19'),
-            ).spacing(6)
-            # .width(640)
-            # .height(480)
-            .alignment(HBox.Alignment.END)
-            .wrap(True)
-            .justify(HBox.JustifyRule.SPACE_BETWEEN)
-        )
+        super().__init__()
+        with HBox().spacing(6).alignment(HBox.Alignment.END).wrap(True).justify(HBox.JustifyRule.SPACE_BETWEEN) as body:
+            for index in range(20):
+                MyButton(f'Button {index + 1}')
+        self.__body = body
 
     def body(self):
         return self.__body
@@ -56,20 +27,30 @@ class MyView(View):
 
 class Header(View):
     def body(self):
-        logo = VBox(
-            Text('My App').size(14),
-            Text('Subtitle').size(10),
-        ).spacing(2)
-        rect = logo.get_bounding_rect()
-        return (
-            HBox(
-                logo.children(
-                    Rectangle(rect.width, rect.height).background('#f0f').opacity(0.3)
-                ),
-                Rectangle(50, 50).background('#800')
-            ).alignment(HBox.Alignment.CENTER).justify(HBox.JustifyRule.SPACE_BETWEEN)
-        )
+        with HBox().alignment(HBox.Alignment.CENTER).justify(HBox.JustifyRule.SPACE_BETWEEN) as root:
+            with VBox().spacing(2):
+                Text('My App').size(14)
+                Text('Subtitle').size(10)
+
+            Rectangle(50, 50).background('#800')
+        return root
 
 
-app = App(VBox(Header(), MyView()).width(640).height(480))
+class SecondView(View):
+    def body(self):
+        with VBox().alignment(VBox.Alignment.CENTER) as root:
+            Rectangle(50, 70).background('#f0f')
+            Text('lol')
+        return root
+
+
+class TestView(View):
+    def body(self):
+        with HBox().alignment(HBox.Alignment.END) as root:
+            Text('Hello world TestView')
+            MyView()
+        return root
+
+
+app = App(TestView())
 app.execute()
