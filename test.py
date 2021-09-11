@@ -14,15 +14,11 @@ class MyButton(View):
 
 
 class MyView(View):
-    def __init__(self):
-        super().__init__()
-        with HBox().spacing(6).alignment(HBox.Alignment.END).wrap(True).justify(HBox.JustifyRule.SPACE_BETWEEN) as body:
+    def body(self):
+        with HBox().spacing(6).alignment(HBox.Alignment.END).wrap(True).justify(HBox.JustifyRule.SPACE_BETWEEN) as root:
             for index in range(20):
                 MyButton(f'Button {index + 1}')
-        self.__body = body
-
-    def body(self):
-        return self.__body
+        return root
 
 
 class Header(View):

@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import skia
 
 from webcolors import hex_to_rgb
@@ -13,6 +11,7 @@ class Rectangle(View):
         self._width = width
         self._height = height
         self._opacity = 1
+        self._radius = 0
 
     def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
         x += self._x
@@ -20,7 +19,10 @@ class Rectangle(View):
         rect = skia.Rect(x, y, x + self._width, y + self._height)
         r, g, b = hex_to_rgb(self._background)
         paint = skia.Paint(Color=skia.Color(r, g, b, round(255 * self._opacity)))
-        canvas.drawRect(rect, paint)
+        if self._radius > 0:
+            canvas.drawRoundRect(rect, self._radius, self._radius, paint)
+        else:
+            canvas.drawRect(rect, paint)
 
         self.draw_children(canvas, x, y, width, height)
 
@@ -33,6 +35,10 @@ class Rectangle(View):
 
     def opacity(self, opacity: float):
         self._opacity = opacity
+        return self
+
+    def radius(self, radius: float):
+        self._radius = radius
         return self
 
 
