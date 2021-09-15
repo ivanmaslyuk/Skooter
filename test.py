@@ -32,21 +32,5 @@ class Header(View):
         return root
 
 
-class SecondView(View):
-    def body(self):
-        with VBox().alignment(VBox.Alignment.CENTER) as root:
-            Rectangle(50, 70).background('#f0f')
-            Text('lol')
-        return root
-
-
-class TestView(View):
-    def body(self):
-        with HBox().alignment(HBox.Alignment.END) as root:
-            Text('Hello world TestView')
-            MyView()
-        return root
-
-
-app = App(TestView())
+app = App(Header())
 app.execute()

@@ -85,8 +85,7 @@ class App:
             glfw.set_cursor_pos_callback(self.glfw_window, self.mouse_pos_callback)
             glfw.set_mouse_button_callback(self.glfw_window, self.mouse_button_callback)
 
-            window_should_close = glfw.window_should_close(self.glfw_window)
-            while glfw.get_key(self.glfw_window, glfw.KEY_ESCAPE) != glfw.PRESS and not window_should_close:
+            while not glfw.window_should_close(self.glfw_window):
                 self.draw()
                 glfw.wait_events()
         finally:
