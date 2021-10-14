@@ -4,6 +4,19 @@ from webcolors import hex_to_rgb
 from core.base import View, Rect
 
 
+class Justify:
+    BEGIN = 'begin'
+    END = 'end'
+    SPACE_BETWEEN = 'space-between'
+    SPACE_AROUND = 'space-around'
+
+
+class Alignment:
+    BEGIN = 'begin'
+    CENTER = 'center'
+    END = 'end'
+
+
 class Rectangle(View):
     def __init__(self, width=0, height=0):
         super().__init__()
@@ -14,8 +27,8 @@ class Rectangle(View):
         self._radius = 0
 
     def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
-        x += self._x
-        y += self._y
+        x += self._x + self._left_margin + self._left_padding
+        y += self._y + self._top_margin + self._top_padding
         rect = skia.Rect(x, y, x + self._width, y + self._height)
         r, g, b = hex_to_rgb(self._background)
         paint = skia.Paint(Color=skia.Color(r, g, b, round(255 * self._opacity)))
@@ -27,7 +40,12 @@ class Rectangle(View):
         self.draw_children(canvas, x, y, width, height)
 
     def get_bounding_rect(self):
-        return Rect(0, 0, self._width, self._height)
+        return Rect(
+            x=0,
+            y=0,
+            width=self._left_margin + self._left_padding + self._width + self._right_padding + self._right_margin,
+            height=self._top_margin + self._top_padding + self._height + self._bottom_padding + self._bottom_margin,
+        )
 
     def background(self, color: str):
         self._background = color
@@ -67,7 +85,7 @@ class Text(View):
         font = skia.Font(None, self._size)
         bounds = skia.Rect()
         font.measureText(self._text, skia.TextEncoding.kUTF8, paint=paint, bounds=bounds)
-        return Rect(0, 0, bounds.width(), bounds.height())
+        return Rect(0, 0, bounds.width(), bounds.height() + 3)
 
     def color(self, color: str):
         self._color = color
@@ -79,21 +97,10 @@ class Text(View):
 
 
 class HBox(View):
-    class Alignment:
-        BEGIN = 'BEGIN'
-        CENTER = 'CENTER'
-        END = 'END'
-
-    class JustifyRule:
-        BEGIN = 'BEGIN'
-        END = 'END'
-        SPACE_BETWEEN = 'SPACE_BETWEEN'
-        SPACE_AROUND = 'SPACE_AROUND'
-
     def __init__(self):
         super().__init__()
-        self._alignment = HBox.Alignment.BEGIN
-        self._justify = HBox.JustifyRule.BEGIN
+        self._alignment = Alignment.BEGIN
+        self._justify = Justify.BEGIN
         self._spacing = 0
         self._height = None
         self._width = None
@@ -108,6 +115,8 @@ class HBox(View):
         rows = []
         row = []
         view_width = self._width or width
+        if view_width:
+            view_width -= self._left_padding + self._right_padding
         for item in self._children:
             bounding_rect = item.get_bounding_rect()
             max_height = max(max_height, bounding_rect.height)
@@ -143,24 +152,24 @@ class HBox(View):
                 item_width = item_info['width']
                 item_height = item_info['height']
 
-                if self._justify == HBox.JustifyRule.END and idx == 0:
+                if self._justify == Justify.END and idx == 0:
                     content_x += leftover_width
 
-                if self._justify == HBox.JustifyRule.SPACE_AROUND:
+                if self._justify == Justify.SPACE_AROUND:
                     content_x += leftover_width / (len(row) + 1)
 
-                if self._justify == HBox.JustifyRule.SPACE_BETWEEN and idx != 0:
+                if self._justify == Justify.SPACE_BETWEEN and idx != 0:
                     content_x += leftover_width / (len(row) - 1)
 
                 if draw:
-                    if self._alignment == HBox.Alignment.BEGIN:
+                    if self._alignment == Alignment.BEGIN:
                         item.draw(canvas, x + content_x, y + content_y, width, height)
-                    elif self._alignment == HBox.Alignment.END:
+                    elif self._alignment == Alignment.END:
                         item.draw(canvas, x + content_x, y + content_y + (max_height - item_height), width, height)
-                    elif self._alignment == HBox.Alignment.CENTER:
+                    elif self._alignment == Alignment.CENTER:
                         item.draw(canvas, x + content_x, y + content_y + (max_height - item_height) / 2, width, height)
 
-                if self._justify == HBox.JustifyRule.SPACE_AROUND and idx == len(row) - 1:
+                if self._justify == Justify.SPACE_AROUND and idx == len(row) - 1:
                     content_x += leftover_width / (len(row) + 1)
 
                 content_x += item_width + self._spacing
@@ -171,8 +180,8 @@ class HBox(View):
             content_x = self._spacing
 
     def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
-        x += self._x
-        y += self._y
+        x += self._x + self._left_padding + self._left_margin
+        y += self._y + self._top_padding + self._top_margin
 
         self._lay_out_items(canvas, x, y, width, height, draw=True)
 
@@ -184,7 +193,12 @@ class HBox(View):
             height = height or self._view_height
             width = width or self._view_width
 
-        return Rect(0, 0, width, height)
+        return Rect(
+            x=0,
+            y=0,
+            width=self._left_margin + width + self._right_margin,
+            height=self._top_margin + height + self._bottom_margin,
+        )
 
     def alignment(self, alignment):
         self._alignment = alignment
@@ -212,21 +226,10 @@ class HBox(View):
 
 
 class VBox(View):
-    class Alignment:
-        BEGIN = 'BEGIN'
-        CENTER = 'CENTER'
-        END = 'END'
-
-    class JustifyRule:
-        BEGIN = 'BEGIN'
-        END = 'END'
-        SPACE_BETWEEN = 'SPACE_BETWEEN'
-        SPACE_AROUND = 'SPACE_AROUND'
-
     def __init__(self):
         super().__init__()
-        self._alignment = VBox.Alignment.BEGIN
-        self._justify = VBox.JustifyRule.BEGIN
+        self._alignment = Alignment.BEGIN
+        self._justify = Justify.BEGIN
         self._spacing = 0
         self._height = None
         self._width = None
@@ -279,24 +282,24 @@ class VBox(View):
                 if self._height:
                     leftover_height = self._height - column_info['column_items_height']
 
-                    if self._justify == VBox.JustifyRule.END and idx == 0:
+                    if self._justify == Justify.END and idx == 0:
                         content_y += leftover_height
 
-                    if self._justify == VBox.JustifyRule.SPACE_AROUND:
+                    if self._justify == Justify.SPACE_AROUND:
                         content_y += leftover_height / (len(column) + 1)
 
-                    if self._justify == VBox.JustifyRule.SPACE_BETWEEN and idx != 0:
+                    if self._justify == Justify.SPACE_BETWEEN and idx != 0:
                         content_y += leftover_height / (len(column) - 1)
 
                 if draw:
-                    if self._alignment == VBox.Alignment.BEGIN:
+                    if self._alignment == Alignment.BEGIN:
                         item.draw(canvas, x + content_x, y + content_y, width, height)
-                    elif self._alignment == VBox.Alignment.END:
+                    elif self._alignment == Alignment.END:
                         item.draw(canvas, x + content_x + (max_width - item_width), y + content_y, width, height)
-                    elif self._alignment == VBox.Alignment.CENTER:
+                    elif self._alignment == Alignment.CENTER:
                         item.draw(canvas, x + content_x + (max_width - item_width) / 2, y + content_y, width, height)
 
-                if self._justify == VBox.JustifyRule.SPACE_AROUND and idx == len(column) - 1:
+                if self._justify == Justify.SPACE_AROUND and idx == len(column) - 1:
                     content_y += leftover_height / (len(column) + 1)
 
                 content_y += item_height + self._spacing
@@ -307,8 +310,8 @@ class VBox(View):
             content_y = self._spacing
 
     def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
-        x += self._x
-        y += self._y
+        x += self._x + self._left_padding + self._left_margin
+        y += self._y + self._top_padding + self._top_margin
 
         self._lay_out_items(canvas, x, y, width, height, draw=True)
 
@@ -338,4 +341,49 @@ class VBox(View):
 
     def wrap(self, wrap: bool = False):
         self._wrap = wrap
+        return self
+
+
+class Image(View):
+    cache = {}
+
+    def __init__(self, filename: str):
+        super(Image, self).__init__()
+        self.filename = filename
+        self.image = None
+        self.custom_width = None
+        self.custom_height = None
+
+    def get_bounding_rect(self) -> Rect:
+        self.load_image()
+        return Rect(0, 0, self.custom_width or self.image.width(), self.custom_height or self.image.height())
+
+    def load_image(self):
+        image = Image.cache.get(self.filename)
+        if image is None:
+            image = skia.Image.open(self.filename)
+            Image.cache[self.filename] = image
+            if self.custom_width or self.custom_height:
+                image.resize(
+                    self.custom_width or self.image.width(),
+                    self.custom_height or self.image.height(),
+                )
+
+    def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
+        self.load_image()
+        image = Image.cache[self.filename]
+
+        canvas.drawImageRect(
+            image,
+            skia.Rect.MakeXYWH(x, y, self.custom_width or self.image.width(), self.custom_height or self.image.height())
+        )
+
+        self.draw_children(canvas, x,  y, width, height)
+
+    def width(self, width: float):
+        self.custom_width = width
+        return self
+
+    def height(self, height: float):
+        self.custom_height = height
         return self

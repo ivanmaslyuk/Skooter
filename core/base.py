@@ -23,6 +23,16 @@ class View:
         self._x = 0
         self._y = 0
 
+        self._top_margin = 0
+        self._right_margin = 0
+        self._bottom_margin = 0
+        self._left_margin = 0
+
+        self._top_padding = 0
+        self._right_padding = 0
+        self._bottom_padding = 0
+        self._left_padding = 0
+
     def __enter__(self):
         CONTAINER_STACK.append(self)
         return self
@@ -68,6 +78,32 @@ class View:
 
     def y(self, y):
         self._y = y
+        return self
+
+    def margin(self, top, right=None, bottom=None, left=None):
+        if top is not None and right is bottom is left is None:
+            self._top_margin = self._right_margin = self._bottom_margin = self._left_margin = top
+        elif top is not None and right is not None and bottom is left is None:
+            self._top_margin = self._bottom_margin = top
+            self._right_margin = self._left_margin = right
+        else:
+            self._top_margin = top
+            self._right_margin = right
+            self._bottom_margin = bottom
+            self._left_margin = left
+        return self
+
+    def padding(self, top, right=None, bottom=None, left=None):
+        if top is not None and right is bottom is left is None:
+            self._top_padding = self._right_padding = self._bottom_padding = self._left_padding = top
+        elif top is not None and right is not None and bottom is left is None:
+            self._top_padding = self._bottom_padding = top
+            self._right_padding = self._left_padding = right
+        else:
+            self._top_padding = top
+            self._right_padding = right
+            self._bottom_padding = bottom
+            self._left_padding = left
         return self
 
     def get_bounding_rect(self) -> Rect:
