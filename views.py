@@ -180,10 +180,17 @@ class HBox(View):
             content_x = self._spacing
 
     def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
-        x += self._x + self._left_padding + self._left_margin
-        y += self._y + self._top_padding + self._top_margin
+        x += self._x + (self._left_padding or 0) + (self._left_margin or 0)
+        y += self._y + (self._top_padding or 0) + (self._top_margin or 0)
 
-        self._lay_out_items(canvas, x, y, width, height, draw=True)
+        self._lay_out_items(
+            canvas,
+            x,
+            y,
+            width - (self._left_padding or 0) - (self._right_padding or 0),
+            height - (self._top_padding or 0) - (self._bottom_padding or 0),
+            draw=True,
+        )
 
     def get_bounding_rect(self) -> Rect:
         width = self._width
@@ -310,10 +317,17 @@ class VBox(View):
             content_y = self._spacing
 
     def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
-        x += self._x + self._left_padding + self._left_margin
-        y += self._y + self._top_padding + self._top_margin
+        x += self._x + self._left_padding or 0 + self._left_margin or 0
+        y += self._y + self._top_padding or 0 + self._top_margin or 0
 
-        self._lay_out_items(canvas, x, y, width, height, draw=True)
+        self._lay_out_items(
+            canvas,
+            x,
+            y,
+            width - (self._left_padding or 0) - (self._right_padding or 0),
+            height - (self._top_padding or 0) - (self._bottom_padding or 0),
+            draw=True
+        )
 
     def get_bounding_rect(self) -> Rect:
         self._lay_out_items(None, 0, 0, 640, 480)
