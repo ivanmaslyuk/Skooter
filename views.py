@@ -359,45 +359,47 @@ class VBox(View):
 
 
 class Image(View):
-    cache = {}
+    __cache = {}
 
     def __init__(self, filename: str):
         super(Image, self).__init__()
-        self.filename = filename
-        self.image = None
-        self.custom_width = None
-        self.custom_height = None
+        self.__filename = filename
+        self.__custom_width = None
+        self.__custom_height = None
 
     def get_bounding_rect(self) -> Rect:
-        self.load_image()
-        return Rect(0, 0, self.custom_width or self.image.width(), self.custom_height or self.image.height())
+        return Rect(0, 0, self.width_value(), self.height_value())
 
     def load_image(self):
-        image = Image.cache.get(self.filename)
+        image = Image.__cache.get(self.__filename)
         if image is None:
-            image = skia.Image.open(self.filename)
-            Image.cache[self.filename] = image
-            if self.custom_width or self.custom_height:
-                image.resize(
-                    self.custom_width or self.image.width(),
-                    self.custom_height or self.image.height(),
-                )
+            image = skia.Image.open(self.__filename)
+            Image.__cache[self.__filename] = image
+            if self.__custom_width or self.__custom_height:
+                image.resize(self.__custom_width or image.width(), self.__custom_height or image.height())
+        if image is None:
+            raise RuntimeError(f'Image could not be loaded: {self.__filename}')
+        return image
 
     def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
-        self.load_image()
-        image = Image.cache[self.filename]
+        image = self.load_image()
 
-        canvas.drawImageRect(
-            image,
-            skia.Rect.MakeXYWH(x, y, self.custom_width or self.image.width(), self.custom_height or self.image.height())
-        )
+        canvas.drawImageRect(image, skia.Rect.MakeXYWH(x, y, self.width_value(), self.height_value()))
 
         self.draw_children(canvas, x,  y, width, height)
 
     def width(self, width: float):
-        self.custom_width = width
+        self.__custom_width = width
         return self
 
     def height(self, height: float):
-        self.custom_height = height
+        self.__custom_height = height
         return self
+
+    def width_value(self):
+        image = self.load_image()
+        return self.__custom_width or image.width()
+
+    def height_value(self):
+        image = self.load_image()
+        return self.__custom_height or image.height()

@@ -44,8 +44,8 @@ class RequestInfo(View):
                 Text(self.request_name)
                 Text('Docs')
 
-            with HBox().justify('space-between').margin(12, 0, 0, 0):
-                Rectangle(width=300, height=40).background('#eee').radius(4)
+            with HBox().margin(12, 0, 0, 0):
+                Rectangle(width=300, height=40).background('#eee').radius(4).margin(0, 12, 0, 0)
                 MyButton('Send')
 
             Image('sample_image.png').width(200).height(200)
