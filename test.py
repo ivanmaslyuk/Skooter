@@ -52,5 +52,18 @@ class RequestInfo(View):
         return root
 
 
-app = App(RequestInfo(), window_width=500, window_height=500)
+class SimpleView(View):
+    def body(self):
+        with Rectangle() as root:
+            Text('Request Name').x(16).y(12)
+            Text('Docs').x(350).y(12)
+
+            Rectangle(width=300, height=40).background('#eee').radius(4).x(16).y(50)
+            MyButton('Send').x(324).y(50)
+
+            Image('sample_image.png', 200, 200).x(16).y(100)
+        return root
+
+
+app = App(SimpleView(), window_width=500, window_height=500)
 app.execute()

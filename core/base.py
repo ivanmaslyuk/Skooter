@@ -1,7 +1,10 @@
 import dataclasses
+import typing
 from typing import Optional
 
 import skia
+
+from core import app
 
 CONTAINER_STACK = []
 
@@ -19,7 +22,7 @@ class View:
         self.parent: View = CONTAINER_STACK[-1] if CONTAINER_STACK else None
         if self.parent:
             self.parent.append_child(self)
-        self._children = []
+        self._children: typing.List[View] = []
         self._x = 0
         self._y = 0
 
@@ -46,7 +49,7 @@ class View:
     def body(self):
         return None
 
-    def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
+    def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float, env: app.Environment):
         self._children *= 0
         with self:
             body: Optional[View] = self.body()
@@ -56,13 +59,21 @@ class View:
         if not issubclass(type(body), View):
             raise Exception('body() method must return a View.')
 
-        body.draw(canvas, x + self._x, y + self._y, width, height)
+        body.draw(canvas, x + self._x, y + self._y, width, height, env)
 
-        self.draw_children(canvas, x + self._x, y + self._y, width, height)
+        self.draw_children(canvas, x + self._x, y + self._y, width, height, env)
 
-    def draw_children(self, canvas: skia.Surface, x: float, y: float, width: float, height: float):
+    def draw_children(
+            self,
+            canvas: skia.Surface,
+            x: float,
+            y: float,
+            width: float,
+            height: float,
+            env: app.Environment,
+    ):
         for view in self._children:
-            view.draw(canvas, x, y, width, height)
+            view.draw(canvas, x, y, width, height, env)
 
     def children(self, *views):
         self._children = views
@@ -107,6 +118,8 @@ class View:
         return self
 
     def get_bounding_rect(self) -> Rect:
+        """Called by containers to lay out items in draw()."""
+
         body: Optional[View] = self.body()
         if not body:
             raise NotImplementedError('Override get_bounding_rect() when using custom draw() method.')
