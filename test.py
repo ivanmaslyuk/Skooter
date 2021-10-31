@@ -48,7 +48,20 @@ class RequestInfo(View):
                 Rectangle(width=300, height=40).background('#eee').radius(4).margin(0, 12, 0, 0)
                 MyButton('Send')
 
-            Image('sample_image.png').width(200).height(200)
+            Image('sample_image.png', 200, 200)
+        return root
+
+
+class SimpleView(View):
+    def body(self):
+        with Rectangle() as root:
+            Text('Request Name').x(16).y(12)
+            Text('Docs').x(350).y(12)
+
+            Rectangle(width=300, height=40).background('#eee').radius(4).x(16).y(50)
+            MyButton('Send').x(324).y(50)
+
+            Image('sample_image.png', 200, 200).x(16).y(100)
         return root
 
 
