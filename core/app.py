@@ -1,14 +1,8 @@
 import time
-from dataclasses import dataclass
 
 import glfw
 import skia
 from OpenGL import GL
-
-
-@dataclass
-class Environment:
-    context: skia.GrDirectContext
 
 
 class App:
@@ -29,8 +23,7 @@ class App:
                 canvas.scale(*glfw.get_window_content_scale(self.glfw_window))
                 self._scaled = True
             start_time = time.time()
-            env = Environment(self.context)
-            self.root_view.draw(canvas, 0, 0, self.window_width, self.window_height, env)
+            self.root_view.draw(canvas, 0, 0, self.window_width, self.window_height)
             # print('Draw time:', round((time.time() - start_time) * 1000, 5), 'ms')
         self.surface.flushAndSubmit()
         glfw.swap_buffers(self.glfw_window)
@@ -62,7 +55,6 @@ class App:
 
     def create_skia_surface(self):
         if self.surface:
-            self.surface.getCanvas().flush()
             self.context.abandonContext()
             self._scaled = False
         self.context = skia.GrDirectContext.MakeGL()
