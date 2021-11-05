@@ -11,7 +11,6 @@ class App:
         self.window_width = window_width
         self.window_height = window_height
         self.window_title = window_title
-        self._scaled = False
         self.glfw_window = None
         self.surface = None
         self.context = None
@@ -19,13 +18,12 @@ class App:
     def draw(self):
         GL.glClear(GL.GL_COLOR_BUFFER_BIT)
         with self.surface as canvas:
-            if not self._scaled:
-                canvas.scale(*glfw.get_window_content_scale(self.glfw_window))
-                self._scaled = True
             start_time = time.time()
             self.root_view.draw(canvas, 0, 0, self.window_width, self.window_height)
             # print('Draw time:', round((time.time() - start_time) * 1000, 5), 'ms')
-        self.surface.flushAndSubmit()
+            canvas.flush()
+
+        self.context.flush()
         glfw.swap_buffers(self.glfw_window)
 
     def mouse_pos_callback(self, window, x: float, y: float):
@@ -55,9 +53,8 @@ class App:
 
     def create_skia_surface(self):
         if self.surface:
-            self.context.abandonContext()
-            self._scaled = False
-        self.context = skia.GrDirectContext.MakeGL()
+            del self.surface
+
         width_scale, height_scale = glfw.get_window_content_scale(self.glfw_window)
         backend_render_target = skia.GrBackendRenderTarget(
             int(self.window_width * width_scale),
@@ -75,9 +72,12 @@ class App:
         )
         assert self.surface is not None
 
+        self.surface.getCanvas().scale(*glfw.get_window_content_scale(self.glfw_window))
+
     def execute(self):
         try:
             self.create_glfw_window()
+            self.context = skia.GrDirectContext.MakeGL()
             self.create_skia_surface()
             GL.glClearColor(255, 255, 255, 255)
 
