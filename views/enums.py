@@ -9,3 +9,8 @@ class Alignment:
     BEGIN = 'begin'
     CENTER = 'center'
     END = 'end'
+
+
+class Direction:
+    HORIZONTAL = 'horizontal'
+    VERTICAL = 'vertical'
