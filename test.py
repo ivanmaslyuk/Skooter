@@ -1,5 +1,6 @@
 from core.app import App
-from views import Rectangle, Text, HBox, VBox, Image, Justify, Alignment
+from views import Rectangle, Text, HBox, VBox, Image
+from views.enums import Justify, Alignment
 from core.base import View
 
 
@@ -66,5 +67,5 @@ class SimpleView(View):
         return root
 
 
-app = App(RequestInfo(), window_width=500, window_height=500)
+app = App(MyView(), window_width=500, window_height=500)
 app.execute()
