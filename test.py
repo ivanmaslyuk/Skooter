@@ -1,5 +1,6 @@
 from core.app import App
-from views import View, Rectangle, Text, HBox, VBox, Image, Justify, Alignment
+from views import Rectangle, Text, HBox, VBox, Image, Justify, Alignment
+from core.base import View
 
 
 class MyButton(View):
