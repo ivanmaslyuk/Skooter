@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import skia
 
 from core.base import View, Rect
@@ -6,18 +8,27 @@ from views.enums import Alignment, Justify
 
 class HBox(View):
     def __init__(self):
-        super().__init__()
+        super(HBox, self).__init__()
         self._alignment = Alignment.BEGIN
         self._justify = Justify.BEGIN
         self._spacing = 0
         self._height = None
         self._width = None
         self._wrap = False
+        self._grow = {}
 
         self._view_width = 0
         self._view_height = 0
 
-    def _lay_out_items(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float, draw: bool = False):
+    def _lay_out_items(
+            self,
+            canvas: skia.Canvas,
+            x: float,
+            y: float,
+            width: float,
+            height: float,
+            draw: bool = False
+    ) -> None:
         content_x = self._spacing
         max_height = 0
         rows = []
@@ -87,7 +98,7 @@ class HBox(View):
             self._view_height = content_y
             content_x = self._spacing
 
-    def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
+    def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float) -> None:
         x += self._x + (self._left_padding or 0) + (self._left_margin or 0)
         y += self._y + (self._top_padding or 0) + (self._top_margin or 0)
 
@@ -115,26 +126,30 @@ class HBox(View):
             height=self._top_margin + height + self._bottom_margin,
         )
 
-    def alignment(self, alignment):
+    def alignment(self, alignment) -> HBox:
         self._alignment = alignment
         return self
 
-    def justify(self, justify):
+    def justify(self, justify) -> HBox:
         self._justify = justify
         return self
 
-    def spacing(self, spacing: float):
+    def spacing(self, spacing: float) -> HBox:
         self._spacing = spacing
         return self
 
-    def width(self, width: float):
+    def width(self, width: float) -> HBox:
         self._width = width
         return self
 
-    def height(self, height: float):
+    def height(self, height: float) -> HBox:
         self._height = height
         return self
 
-    def wrap(self, wrap: bool = False):
+    def wrap(self, wrap: bool = False) -> HBox:
         self._wrap = wrap
+        return self
+
+    def grow(self, view: View, priority: int) -> HBox:
+        self._grow[view] = priority
         return self

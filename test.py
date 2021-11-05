@@ -46,8 +46,10 @@ class RequestInfo(View):
                 Text(self.request_name)
                 Text('Docs')
 
-            with HBox().margin(12, 0, 0, 0):
-                Rectangle(width=300, height=40).background('#eee').radius(4).margin(0, 12, 0, 0)
+            with HBox().margin(12, 0, 0, 0) as address_input:
+                address_field = Rectangle(width=300, height=40).background('#eee').radius(4)\
+                    .margin(0, 12, 0, 0)
+                address_input.grow(address_field, 1)
                 MyButton('Send')
 
             Image('sample_image.png', 200, 200)
@@ -67,5 +69,5 @@ class SimpleView(View):
         return root
 
 
-app = App(MyView(), window_width=500, window_height=500)
+app = App(RequestInfo(), window_width=500, window_height=500)
 app.execute()
