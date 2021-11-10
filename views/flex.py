@@ -1,12 +1,21 @@
 from __future__ import annotations
 
+import dataclasses
+from typing import List, Optional
+
 import skia
 
 from core.base import View, Rect
+from core.color import Color
 from .enums import Justify, Alignment, Direction
 
 
 class Flex(View):
+    __slots__ = (
+        '_alignment', '_justify', '_direction', '_spacing', '_height', '_width', '_wrap', '_grow', '_layout_cache',
+        '_background',
+    )
+
     def __init__(self):
         super(Flex, self).__init__()
         self._alignment = Alignment.BEGIN
@@ -17,116 +26,170 @@ class Flex(View):
         self._width = None
         self._wrap = False
         self._grow = {}
+        self._layout_cache: Optional[Layout] = None
+        self._background: Optional[Color] = None
 
-        self._view_width = 0
-        self._view_height = 0
-
-    def _lay_out_items(
-            self,
-            canvas: skia.Canvas,
-            x: float,
-            y: float,
-            width: float,
-            height: float,
-            draw: bool = False
-    ) -> None:
-        content_x = self._spacing
-        parallel_coord: int = 0  # This would be X if horizontal and Y if vertical
-        max_height = 0
-        rows = []
-        row = []
-        view_width = self._width or width
-        if view_width:
-            view_width -= self._left_padding + self._right_padding
-        for item in self._children:
-            bounding_rect = item.get_bounding_rect()  # todo might be affecting performance
-            max_height = max(max_height, bounding_rect.height)
-
-            if self._wrap and view_width and content_x + self._spacing + bounding_rect.width > view_width:
-                rows.append({
-                    'row': row,
-                    'row_items_width': content_x,
-                })
-                row = []
-                content_x = self._spacing
-
-            row.append({
-                'width': bounding_rect.width,
-                'height': bounding_rect.height,
-                'item': item,
-            })
-            content_x += bounding_rect.width + self._spacing
-
-        if row:
-            rows.append({
-                'row': row,
-                'row_items_width': content_x,
-            })
-
-        content_x = self._spacing
-        content_y = self._spacing
-        for row_info in rows:
-            row = row_info['row']
-            leftover_width = view_width - row_info['row_items_width']
-            for idx, item_info in enumerate(row):
-                item = item_info['item']
-                item_width = item_info['width']
-                item_height = item_info['height']
-
-                if self._justify == Justify.END and idx == 0:
-                    content_x += leftover_width
-
-                if self._justify == Justify.SPACE_AROUND:
-                    content_x += leftover_width / (len(row) + 1)
-
-                if self._justify == Justify.SPACE_BETWEEN and idx != 0:
-                    content_x += leftover_width / (len(row) - 1)
-
-                if draw:
-                    if self._alignment == Alignment.BEGIN:
-                        item.draw(canvas, x + content_x, y + content_y, width, height)
-                    elif self._alignment == Alignment.END:
-                        item.draw(canvas, x + content_x, y + content_y + (max_height - item_height), width, height)
-                    elif self._alignment == Alignment.CENTER:
-                        item.draw(canvas, x + content_x, y + content_y + (max_height - item_height) / 2, width, height)
-
-                if self._justify == Justify.SPACE_AROUND and idx == len(row) - 1:
-                    content_x += leftover_width / (len(row) + 1)
-
-                content_x += item_width + self._spacing
-
-            self._view_width = max(self._view_width, content_x)
-            content_y += max_height + self._spacing
-            self._view_height = content_y
-            content_x = self._spacing
-
-    def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float) -> None:
-        x += self._x + (self._left_padding or 0) + (self._left_margin or 0)
-        y += self._y + (self._top_padding or 0) + (self._top_margin or 0)
-
-        self._lay_out_items(
-            canvas,
-            x,
-            y,
-            width - (self._left_padding or 0) - (self._right_padding or 0),
-            height - (self._top_padding or 0) - (self._bottom_padding or 0),
-            draw=True,
+    def _get_groups(self, available_width: float, available_height: float) -> (List[dict], float):
+        group_advance = self._spacing
+        max_spread = 0
+        groups = []
+        group = []
+        advance_limit = self._direction_choice(
+            horizontal_choice=available_width,
+            vertical_choice=available_height,
         )
 
+        for view in self._children:
+            bounding_rect = view.get_bounding_rect()
+            item_advance = self._get_advance(bounding_rect.width, bounding_rect.height)
+            item_spread = self._get_spread(bounding_rect.width, bounding_rect.height)
+            max_spread = max(max_spread, item_spread)
+
+            if self._wrap and group_advance + item_advance + self._spacing > advance_limit:
+                groups.append({
+                    'group': group,
+                    'group_advance': group_advance,
+                })
+                group = []
+                group_advance = self._spacing
+
+            group.append({
+                'advance': item_advance,
+                'spread': item_spread,
+                'view': view,
+            })
+            group_advance += item_advance + self._spacing
+
+        if group:
+            groups.append({
+                'group': group,
+                'group_advance': group_advance,
+            })
+
+        return groups, max_spread
+
+    def _get_layout(self, available_width: float, available_height: float) -> Layout:
+        # if self._layout_cache:
+        #     return self._layout_cache
+
+        available_width -= self._left_padding + self._right_padding
+        available_height -= self._top_padding + self._bottom_padding
+
+        groups, max_spread = self._get_groups(available_width, available_height)
+
+        content_pr = self._spacing
+        content_pp = self._spacing
+        layout_items = []
+        flex_width = 0
+        flex_height = 0
+        for group_info in groups:
+            group = group_info['group']
+            leftover_advance = self._direction_choice(
+                horizontal_choice=available_width - group_info['group_advance'],
+                vertical_choice=available_height - group_info['group_advance'],
+            )
+            if self._justify == Justify.END:
+                content_pr += leftover_advance
+
+            for idx, item_info in enumerate(group):
+                view = item_info['view']
+                item_advance = item_info['advance']
+                item_spread = item_info['spread']
+
+                if self._justify == Justify.SPACE_AROUND:
+                    content_pr += leftover_advance / (len(group) + 1)
+                if self._justify == Justify.SPACE_BETWEEN and idx != 0:
+                    content_pr += leftover_advance / (len(group) - 1)
+
+                item_x = self._direction_choice(content_pr, content_pp)
+                item_y = self._direction_choice(content_pp, content_pr)
+                item_width = self._direction_choice(item_advance, available_width)
+                item_height = self._direction_choice(available_height, item_advance)
+                if self._alignment == Alignment.END:
+                    if self._direction == Direction.HORIZONTAL:
+                        item_y += max_spread - item_spread
+                    else:
+                        item_x += max_spread - item_spread
+                elif self._alignment == Alignment.CENTER:
+                    if self._direction == Direction.HORIZONTAL:
+                        item_y += (max_spread - item_spread) / 2
+                    else:
+                        item_x += (max_spread - item_spread) / 2
+                layout_items.append(LayoutItem(view, item_x, item_y, item_width, item_height))
+
+                if self._justify == Justify.SPACE_AROUND and idx == len(group) - 1:
+                    content_pr += leftover_advance / (len(group) + 1)
+
+                content_pr += item_advance + self._spacing
+
+            flex_width = max(flex_width, content_pr)
+            content_pp += max_spread + self._spacing
+            flex_height = content_pp
+            content_pr = self._spacing
+
+        if self._direction == Direction.VERTICAL:
+            flex_width, flex_height = flex_height, flex_width
+
+        self._layout_cache = Layout(layout_items, flex_width, flex_height)
+        return self._layout_cache
+
+    def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float) -> None:
+        x += self._x + self._left_padding + self._left_margin
+        y += self._y + self._top_padding + self._top_margin
+
+        width = self._width or width
+        height = self._height or height
+
+        layout = self._get_layout(width, height)
+
+        if self._background:
+            canvas.drawRect(
+                skia.Rect.MakeXYWH(x, y, layout.width, layout.height),
+                skia.Paint(Color=self._background.as_skia_color()),
+            )
+
+        for layout_item in layout.items:
+            layout_item.view.draw(canvas, x + layout_item.x, y + layout_item.y, layout_item.width, layout_item.height)
+
     def get_bounding_rect(self) -> Rect:
-        width = self._width
-        height = self._height
-        if height is None or width is None:
-            self._lay_out_items(None, 0, 0, 640, 480)
-            height = height or self._view_height
-            width = width or self._view_width
+        view_width = self._width or 500
+        view_height = self._height or 500
+        layout = self._get_layout(view_width, view_height)
 
         return Rect(
             x=0,
             y=0,
-            width=self._left_margin + width + self._right_margin,
-            height=self._top_margin + height + self._bottom_margin,
+            width=self._left_margin + layout.width + self._right_margin,
+            height=self._top_margin + layout.height + self._bottom_margin,
         )
+
+    def _direction_choice(self, horizontal_choice, vertical_choice):
+        if self._direction == Direction.HORIZONTAL:
+            return horizontal_choice
+        else:
+            return vertical_choice
+
+    def _get_advance(self, view_width: float, view_height: float) -> float:
+        """
+        Returns the advance of a view down the axis.
+        This would be width if direction is horizontal and height if direction is vertical.
+        """
+        return self._direction_choice(
+            horizontal_choice=view_width,
+            vertical_choice=view_height,
+        )
+
+    def _get_spread(self, view_width: float, view_height: float) -> float:
+        """
+        Returns the spread of a view around the axis.
+        This would be height if direction is horizontal and width if direction is vertical.
+        """
+        return self._direction_choice(
+            horizontal_choice=view_height,
+            vertical_choice=view_width,
+        )
+
+    # Properties
 
     def alignment(self, alignment) -> Flex:
         self._alignment = alignment
@@ -134,6 +197,18 @@ class Flex(View):
 
     def justify(self, justify) -> Flex:
         self._justify = justify
+        return self
+
+    def direction(self, direction) -> Flex:
+        self._direction = direction
+        return self
+
+    def horizontal(self) -> Flex:
+        self._direction = Direction.HORIZONTAL
+        return self
+
+    def vertical(self) -> Flex:
+        self._direction = Direction.VERTICAL
         return self
 
     def spacing(self, spacing: float) -> Flex:
@@ -153,5 +228,27 @@ class Flex(View):
         return self
 
     def grow(self, view: View, priority: int) -> Flex:
+        if view not in self._children:
+            raise RuntimeError('Flex.grow() can only accept children.')
         self._grow[view] = priority
         return self
+
+    def background(self, color: Color) -> Flex:
+        self._background = color
+        return self
+
+
+@dataclasses.dataclass
+class LayoutItem:
+    view: View
+    x: float
+    y: float
+    width: float
+    height: float
+
+
+@dataclasses.dataclass
+class Layout:
+    items: List[LayoutItem]
+    width: float
+    height: float

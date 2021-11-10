@@ -1,5 +1,6 @@
 from core.app import App
-from views import Rectangle, Text, HBox, VBox, Image
+from core.color import Color
+from views import Rectangle, Text, HBox, VBox, Image, Flex
 from views.enums import Justify, Alignment
 from core.base import View
 
@@ -41,14 +42,13 @@ class RequestInfo(View):
     request_name = 'Request Name'
 
     def body(self):
-        with VBox().padding(12, 16) as root:
-            with HBox().justify('space-between'):
+        with Flex().vertical().padding(12, 16) as root:
+            with Flex().justify('space-between'):
                 Text(self.request_name)
                 Text('Docs')
 
-            with HBox().margin(12, 0, 0, 0) as address_input:
-                address_field = Rectangle(width=300, height=40).background('#eee').radius(4)\
-                    .margin(0, 12, 0, 0)
+            with Flex().margin(12, 0).justify('space-between') as address_input:
+                address_field = Rectangle(width=300, height=40).background('#eee').radius(4).margin(right=12)
                 address_input.grow(address_field, 1)
                 MyButton('Send')
 
@@ -69,5 +69,6 @@ class SimpleView(View):
         return root
 
 
-app = App(RequestInfo(), window_width=500, window_height=500)
-app.execute()
+if __name__ == '__main__':
+    app = App(RequestInfo(), window_width=500, window_height=500)
+    app.execute()
