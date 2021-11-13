@@ -41,19 +41,19 @@ class View:
         self.parent: View = CONTAINER_STACK[-1] if CONTAINER_STACK else None
         if self.parent:
             self.parent.append_child(self)
-        self._children = []
-        self._x = 0
-        self._y = 0
+        self._children: List[View] = []
+        self._x: float = 0
+        self._y: float = 0
 
-        self._top_margin = 0
-        self._right_margin = 0
-        self._bottom_margin = 0
-        self._left_margin = 0
+        self._top_margin: float = 0
+        self._right_margin: float = 0
+        self._bottom_margin: float = 0
+        self._left_margin: float = 0
 
-        self._top_padding = 0
-        self._right_padding = 0
-        self._bottom_padding = 0
-        self._left_padding = 0
+        self._top_padding: float = 0
+        self._right_padding: float = 0
+        self._bottom_padding: float = 0
+        self._left_padding: float = 0
 
     def __enter__(self):
         CONTAINER_STACK.append(self)
@@ -77,7 +77,7 @@ class View:
             body: Optional[View] = self.body()
 
         if body is None:
-            self.paint(canvas, x, y, width, height)
+            self.paint(canvas, x + self._x, y + self._y, width, height)
         else:
             if not issubclass(type(body), View):
                 raise Exception('body() method must return a View.')

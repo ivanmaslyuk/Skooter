@@ -12,7 +12,7 @@ class MyButton(View):
 
     def body(self):
         with Rectangle(80, 40).background(Color('#00f')).radius(4) as root:
-            text = Text(self.text).color('#fff')
+            text = Text(self.text).color('#f00')
             text_bounding_rect = text.get_bounding_rect()
             text.x(40 - text_bounding_rect.width / 2)
             text.y(20 - text_bounding_rect.height / 2)
@@ -47,11 +47,9 @@ class RequestInfo(View):
                 Text(self.request_name)
                 Text('Docs')
 
-            with Flex().margin(12, 0).justify('space-between') as address_input:
-                address_input.grow(
-                    Rectangle(width=None, height=40).background(Color('#eee')).radius(4).margin(right=12),
-                    1
-                )
+            with Flex().margin(12, 0).justify('space-between') as input_row:
+                url_field = Rectangle(width=None, height=40).background(Color('#eee')).radius(4).margin(right=12)
+                input_row.grow(url_field, 1)
                 MyButton('Send')
         return root
 
