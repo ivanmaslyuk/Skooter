@@ -13,7 +13,7 @@ from .enums import Justify, Alignment, Direction
 class Flex(View):
     __slots__ = (
         '_alignment', '_justify', '_direction', '_spacing', '_height', '_width', '_wrap', '_grow', '_layout_cache',
-        '_background',
+        '_background', '__debug',
     )
 
     def __init__(self):
@@ -28,6 +28,7 @@ class Flex(View):
         self._grow = {}
         self._layout_cache: Optional[Layout] = None
         self._background: Optional[Color] = None
+        self.__debug = False
 
     def _get_groups(self, available_width: float, available_height: float) -> (List[dict], float):
         group_advance = self._spacing
@@ -76,6 +77,7 @@ class Flex(View):
         available_height -= self._top_padding + self._bottom_padding
 
         groups, max_spread = self._get_groups(available_width, available_height)
+        grow_sum = sum(self._grow.values())
 
         content_pr = self._spacing
         content_pp = self._spacing
@@ -83,18 +85,24 @@ class Flex(View):
         flex_width = 0
         flex_height = 0
         for group_info in groups:
-            group = group_info['group']
             leftover_advance = self._direction_choice(
                 horizontal_choice=available_width - group_info['group_advance'],
                 vertical_choice=available_height - group_info['group_advance'],
             )
+            grow_advance = leftover_advance
             if self._justify == Justify.END:
                 content_pr += leftover_advance
 
+            group = group_info['group']
             for idx, item_info in enumerate(group):
                 view = item_info['view']
                 item_advance = item_info['advance']
                 item_spread = item_info['spread']
+
+                if grow_sum > 0 and leftover_advance > 0:
+                    item_grow_advance = (self._grow.get(view, 0) / grow_sum) * grow_advance
+                    item_advance += item_grow_advance
+                    leftover_advance -= item_grow_advance
 
                 if self._justify == Justify.SPACE_AROUND:
                     content_pr += leftover_advance / (len(group) + 1)
@@ -144,8 +152,8 @@ class Flex(View):
 
         if self._background:
             canvas.drawRect(
-                skia.Rect.MakeXYWH(x, y, layout.width, layout.height),
-                skia.Paint(Color=self._background.as_skia_color()),
+                skia.Rect.MakeXYWH(x, y, layout.width, layout.height),  # noqa
+                skia.Paint(Color=self._background.as_skia_color()),  # noqa
             )
 
         for layout_item in layout.items:
@@ -191,7 +199,7 @@ class Flex(View):
 
     # Properties
 
-    def alignment(self, alignment) -> Flex:
+    def align(self, alignment) -> Flex:
         self._alignment = alignment
         return self
 
@@ -235,6 +243,10 @@ class Flex(View):
 
     def background(self, color: Color) -> Flex:
         self._background = color
+        return self
+
+    def debug(self):
+        self.__debug = True
         return self
 
 

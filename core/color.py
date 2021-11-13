@@ -31,3 +31,11 @@ class Color:
     @classmethod
     def blue(cls) -> 'Color':
         return cls(0, 0, 255)
+
+    @classmethod
+    def white(cls):
+        return cls(255, 255, 255)
+
+    @classmethod
+    def black(cls):
+        return cls(0, 0, 0)
