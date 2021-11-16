@@ -22,7 +22,7 @@ def calculate_spacings(
         right: float = None,
         bottom: float = None,
         left: float = None
-    ):
+        ):
     if v is not None and h is None:
         return v, v, v, v
     elif v is not None and h is not None:
@@ -72,11 +72,14 @@ class View:
         pass
 
     def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
+        old_children: List[View] = self._children
         self._children = []
         with self:
             body: Optional[View] = self.body()
 
         if body is None:
+            self._children = old_children
+            del old_children
             self.paint(canvas, x + self._x, y + self._y, width, height)
         else:
             if not issubclass(type(body), View):

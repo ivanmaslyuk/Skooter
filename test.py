@@ -12,7 +12,7 @@ class MyButton(View):
 
     def body(self):
         with Rectangle(80, 40).background(Color('#00f')).radius(4) as root:
-            text = Text(self.text).color('#f00')
+            text = Text(self.text).color('#fff')
             text_bounding_rect = text.get_bounding_rect()
             text.x(40 - text_bounding_rect.width / 2)
             text.y(20 - text_bounding_rect.height / 2)
