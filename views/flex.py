@@ -12,7 +12,7 @@ from .enums import Justify, Alignment, Direction
 
 class Flex(View):
     __slots__ = (
-        '_alignment', '_justify', '_direction', '_spacing', '_height', '_width', '_wrap', '_grow', '_layout_cache',
+        '_alignment', '_justify', '_direction', '_height', '_width', '_wrap', '_grow', '_layout_cache',
         '_background', '__debug',
     )
 
@@ -21,7 +21,6 @@ class Flex(View):
         self._alignment = Alignment.BEGIN
         self._justify = Justify.BEGIN
         self._direction = Direction.HORIZONTAL
-        self._spacing = 0
         self._height = None
         self._width = None
         self._wrap = False
@@ -31,7 +30,7 @@ class Flex(View):
         self.__debug = False
 
     def _get_groups(self, available_width: float, available_height: float) -> (List[dict], float):
-        group_advance = self._spacing
+        group_advance = 0
         max_spread = 0
         groups = []
         group = []
@@ -46,20 +45,20 @@ class Flex(View):
             item_spread = self._get_spread(bounding_rect.width, bounding_rect.height)
             max_spread = max(max_spread, item_spread)
 
-            if self._wrap and group_advance + item_advance + self._spacing > advance_limit:
+            if self._wrap and group_advance + item_advance > advance_limit:
                 groups.append({
                     'group': group,
                     'group_advance': group_advance,
                 })
                 group = []
-                group_advance = self._spacing
+                group_advance = 0
 
             group.append({
                 'advance': item_advance,
                 'spread': item_spread,
                 'view': view,
             })
-            group_advance += item_advance + self._spacing
+            group_advance += item_advance
 
         if group:
             groups.append({
@@ -79,8 +78,8 @@ class Flex(View):
         groups, max_spread = self._get_groups(available_width, available_height)
         grow_sum = sum(self._grow.values())
 
-        content_pr = self._spacing
-        content_pp = self._spacing
+        content_pr = 0
+        content_pp = 0
         layout_items = []
         flex_width = 0
         flex_height = 0
@@ -128,12 +127,12 @@ class Flex(View):
                 if self._justify == Justify.SPACE_AROUND and idx == len(group) - 1:
                     content_pr += leftover_advance / (len(group) + 1)
 
-                content_pr += item_advance + self._spacing
+                content_pr += item_advance
 
             flex_width = max(flex_width, content_pr)
-            content_pp += max_spread + self._spacing
+            content_pp += max_spread
             flex_height = content_pp
-            content_pr = self._spacing
+            content_pr = 0
 
         if self._direction == Direction.VERTICAL:
             flex_width, flex_height = flex_height, flex_width
@@ -217,10 +216,6 @@ class Flex(View):
 
     def vertical(self) -> Flex:
         self._direction = Direction.VERTICAL
-        return self
-
-    def spacing(self, spacing: float) -> Flex:
-        self._spacing = spacing
         return self
 
     def width(self, width: float) -> Flex:
