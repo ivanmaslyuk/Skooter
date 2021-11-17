@@ -48,9 +48,11 @@ class RequestInfo(View):
                 Text('Docs')
 
             with Flex().margin(12, 0).justify('space-between') as input_row:
-                url_field = Rectangle(width=None, height=40).background(Color('#eee')).radius(4).margin(right=12)
+                url_field = Rectangle(width=20, height=40).background(Color('#eee')).radius(4).margin(right=12)
                 input_row.grow(url_field, 1)
                 MyButton('Send')
+
+            Image('sample_image.png', 100, 100)
         return root
 
 

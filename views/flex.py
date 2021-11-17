@@ -145,8 +145,8 @@ class Flex(View):
         x += self._x + self._left_padding + self._left_margin
         y += self._y + self._top_padding + self._top_margin
 
-        width = self._width or width
-        height = self._height or height
+        width = self._width or width - self._left_margin - self._left_margin
+        height = self._height or height - self._top_margin - self._bottom_margin
 
         layout = self._get_layout(width, height)
 

@@ -16,8 +16,8 @@ class Rectangle(View):
     def paint(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
         x += self._x + self._left_margin + self._left_padding
         y += self._y + self._top_margin + self._top_padding
-        rect_width = self._width or width - self._left_margin - self._right_margin
-        rect_height = self._height or height - self._top_margin - self._bottom_margin
+        rect_width = width - self._left_margin - self._right_margin
+        rect_height = height - self._top_margin - self._bottom_margin
         rect = skia.Rect(x, y, x + rect_width, y + rect_height)
         paint = skia.Paint(Color=self._background.as_skia_color())
         if self._radius > 0:
