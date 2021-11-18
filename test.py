@@ -21,7 +21,7 @@ class MyButton(View):
 
 class MyView(View):
     def body(self):
-        with Flex().spacing(6).wrap(True).justify(Justify.SPACE_BETWEEN) as root:
+        with Flex().wrap(True).justify(Justify.SPACE_BETWEEN).padding(4) as root:
             for index in range(20):
                 MyButton(f'Button {index + 1}')
         return root
@@ -29,8 +29,8 @@ class MyView(View):
 
 class Header(View):
     def body(self):
-        with Flex().align(Alignment.CENTER).justify('space-between').spacing(8) as root:
-            with Flex().vertical().spacing(2):
+        with Flex().align(Alignment.CENTER).justify('space-between') as root:
+            with Flex().vertical():
                 Text('My App').size(14)
                 Text('Subtitle').size(10)
 
@@ -48,7 +48,7 @@ class RequestInfo(View):
                 Text('Docs')
 
             with Flex().margin(12, 0).justify('space-between') as input_row:
-                url_field = Rectangle(width=20, height=40).background(Color('#eee')).radius(4).margin(right=12)
+                url_field = Rectangle(width=20, height=None).background(Color('#eee')).radius(4).margin(right=12)
                 input_row.grow(url_field, 1)
                 MyButton('Send')
 

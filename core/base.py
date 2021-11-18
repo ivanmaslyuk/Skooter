@@ -33,8 +33,8 @@ def calculate_spacings(
 
 class View:
     __slots__ = (
-        'parent', '_children', '_x', '_y', '_top_margin', '_right_margin', '_bottom_margin', '_left_margin',
-        '_top_padding', '_right_padding', '_bottom_padding', '_left_padding',
+        'parent', '_children', '_x', '_y', '_width', '_height', '_top_margin', '_right_margin', '_bottom_margin',
+        '_left_margin', '_top_padding', '_right_padding', '_bottom_padding', '_left_padding',
     )
 
     def __init__(self):
@@ -44,6 +44,8 @@ class View:
         self._children: List[View] = []
         self._x: float = 0
         self._y: float = 0
+        self._height: float = 0
+        self._width: float = 0
 
         self._top_margin: float = 0
         self._right_margin: float = 0
@@ -93,12 +95,23 @@ class View:
         for view in self._children:
             view.draw(canvas, x, y, width, height)
 
+    def get_children(self) -> List['View']:
+        return self._children
+
     def x(self, x):
         self._x = x
         return self
 
     def y(self, y):
         self._y = y
+        return self
+
+    def width(self, width):
+        self._width = width
+        return self
+
+    def height(self, height):
+        self._height = height
         return self
 
     def margin(
@@ -112,14 +125,10 @@ class View:
             left: float = None
     ):
         top, right, bottom, left = calculate_spacings(v, h, top=top, right=right, bottom=bottom, left=left)
-        if top is not None:
-            self._top_margin = top
-        if right is not None:
-            self._right_margin = right
-        if bottom is not None:
-            self._bottom_margin = bottom
-        if left is not None:
-            self._left_margin = left
+        self._top_margin = top or self._top_margin
+        self._right_margin = right or self._right_margin
+        self._bottom_margin = bottom or self._bottom_margin
+        self._left_margin = left or self._left_margin
         return self
 
     def padding(
@@ -133,14 +142,10 @@ class View:
             left: float = None
     ):
         top, right, bottom, left = calculate_spacings(v, h, top=top, right=right, bottom=bottom, left=left)
-        if top is not None:
-            self._top_padding = top
-        if right is not None:
-            self._right_padding = right
-        if bottom is not None:
-            self._bottom_padding = bottom
-        if left is not None:
-            self._left_padding = left
+        self._top_padding = top or self._top_padding
+        self._right_padding = right or self._right_padding
+        self._bottom_padding = bottom or self._bottom_padding
+        self._left_padding = left or self._left_padding
         return self
 
     def get_bounding_rect(self) -> Rect:
@@ -153,5 +158,3 @@ class View:
 
         return body.get_bounding_rect()
 
-    def get_children(self) -> List['View']:
-        return self._children

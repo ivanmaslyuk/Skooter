@@ -50,11 +50,3 @@ class Rectangle(View):
     def radius(self, radius: float) -> 'Rectangle':
         self._radius = radius
         return self
-
-    def width(self, width: float) -> 'Rectangle':
-        self._width = width
-        return self
-
-    def height(self, height: float) -> 'Rectangle':
-        self._height = height
-        return self
