@@ -1,6 +1,6 @@
 from core.app import App
 from core.color import Color
-from views import Rectangle, Text, Image, Flex
+from views import Rectangle, Text, Image, Flex, Input
 from views.enums import Justify, Alignment
 from core.base import View
 
@@ -12,7 +12,7 @@ class MyButton(View):
 
     def body(self):
         with Rectangle(80, 40).background(Color('#00f')).radius(4) as root:
-            text = Text(self.text).color('#fff')
+            text = Text(self.text).color(Color.white())
             text_bounding_rect = text.get_bounding_rect()
             text.x(40 - text_bounding_rect.width / 2)
             text.y(20 - text_bounding_rect.height / 2)
@@ -44,7 +44,7 @@ class RequestInfo(View):
     def body(self):
         with Flex().vertical().padding(12, 16) as root:
             with Flex().justify('space-between'):
-                Text(self.request_name)
+                Text(self.request_name).background(Color.green())
                 Text('Docs')
 
             with Flex().margin(12, 0).justify('space-between') as input_row:
@@ -56,6 +56,15 @@ class RequestInfo(View):
         return root
 
 
+class InputTest(View):
+    def body(self):
+        with Flex().padding(50).vertical() as root:
+            Input()
+            Text('sample text SAMPLE TEXT').size(16).background(Color.green())
+            Text('sample text SAMPLE TEXT').background(Color.red())
+        return root
+
+
 if __name__ == '__main__':
-    app = App(RequestInfo(), window_width=500, window_height=500)
+    app = App(InputTest(), window_width=500, window_height=500)
     app.execute()

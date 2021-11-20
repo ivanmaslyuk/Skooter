@@ -4,3 +4,4 @@ from .text import Text
 from .rectangle import Rectangle
 from .image import Image
 from .flex import Flex
+from .input import Input

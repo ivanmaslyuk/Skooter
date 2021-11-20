@@ -41,6 +41,7 @@ class View:
         self.parent: View = CONTAINER_STACK[-1] if CONTAINER_STACK else None
         if self.parent:
             self.parent.append_child(self)
+
         self._children: List[View] = []
         self._x: float = 0
         self._y: float = 0
