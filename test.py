@@ -1,3 +1,5 @@
+import random
+
 from core.app import App
 from core.color import Color
 from views import Rectangle, Text, Image, Flex, Input
@@ -60,8 +62,7 @@ class InputTest(View):
     def body(self):
         with Flex().padding(50).vertical() as root:
             Input()
-            Text('sample text SAMPLE TEXT').size(16).background(Color.green())
-            Text('sample text SAMPLE TEXT').background(Color.red())
+            Text('sample text SAMPLE TEXT').size(16).background(Color.green()).y(100)
         return root
 
 

@@ -4,8 +4,10 @@ import glfw
 import skia
 from OpenGL import GL
 
+from .singleton import Singleton
 
-class App:
+
+class App(metaclass=Singleton):
     def __init__(self, root_view, window_width=640, window_height=480, window_title='Window'):
         self.root_view = root_view
         self.window_width = window_width
@@ -84,6 +86,10 @@ class App:
             glfw.set_window_size_callback(self.glfw_window, self.window_size_callback)
             glfw.set_cursor_pos_callback(self.glfw_window, self.mouse_pos_callback)
             glfw.set_mouse_button_callback(self.glfw_window, self.mouse_button_callback)
+
+            # from .key_input import KeyInput
+            # glfw.set_key_callback(self.glfw_window, KeyInput.key_callback)
+            # glfw.set_char_callback(self.glfw_window, KeyInput.char_callback)
 
             while not glfw.window_should_close(self.glfw_window):
                 self.draw()

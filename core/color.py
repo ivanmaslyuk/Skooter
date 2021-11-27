@@ -1,4 +1,4 @@
-from typing import Optional
+import random
 
 import skia
 
@@ -19,6 +19,10 @@ class Color:
 
     def as_skia_color(self) -> skia.Color:
         return skia.Color(self.__red, self.__green, self.__blue)
+
+    @classmethod
+    def random(cls):
+        return cls(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
 
     @classmethod
     def red(cls) -> 'Color':
