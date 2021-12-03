@@ -22,7 +22,7 @@ def calculate_spacings(
         right: float = None,
         bottom: float = None,
         left: float = None
-        ):
+):
     if v is not None and h is None:
         return v, v, v, v
     elif v is not None and h is not None:
