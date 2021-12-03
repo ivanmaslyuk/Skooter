@@ -43,7 +43,6 @@ class View:
         if self.parent:
             self.parent.append_child(self)
 
-        self.__is_abandoned: bool = False
         self._children: List[View] = []
         self._x: float = 0
         self._y: float = 0
