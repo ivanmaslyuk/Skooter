@@ -1,15 +1,19 @@
 import time
+import gc
 
 import glfw
 import skia
 from OpenGL import GL
 
 from .singleton import Singleton
+from .key_input import KeyInput
+from .base import View
 
 
 class App(metaclass=Singleton):
-    def __init__(self, root_view, window_width=640, window_height=480, window_title='Window'):
-        self.root_view = root_view
+    def __init__(self, root_view: View, window_width=640, window_height=480, window_title='Window'):
+        self.key_input = KeyInput()
+        self.root_view: View = root_view.context(self.key_input)
         self.window_width = window_width
         self.window_height = window_height
         self.window_title = window_title
@@ -18,6 +22,7 @@ class App(metaclass=Singleton):
         self.context = None
 
     def draw(self):
+        gc.collect()
         GL.glClear(GL.GL_COLOR_BUFFER_BIT)
         with self.surface as canvas:
             start_time = time.time()
@@ -86,10 +91,8 @@ class App(metaclass=Singleton):
             glfw.set_window_size_callback(self.glfw_window, self.window_size_callback)
             glfw.set_cursor_pos_callback(self.glfw_window, self.mouse_pos_callback)
             glfw.set_mouse_button_callback(self.glfw_window, self.mouse_button_callback)
-
-            # from .key_input import KeyInput
-            # glfw.set_key_callback(self.glfw_window, KeyInput.key_callback)
-            # glfw.set_char_callback(self.glfw_window, KeyInput.char_callback)
+            glfw.set_key_callback(self.glfw_window, self.key_input.key_callback)
+            glfw.set_char_callback(self.glfw_window, self.key_input.char_callback)
 
             while not glfw.window_should_close(self.glfw_window):
                 self.draw()

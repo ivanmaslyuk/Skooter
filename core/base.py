@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 import skia
 
@@ -33,8 +33,9 @@ def calculate_spacings(
 
 class View:
     __slots__ = (
-        'parent', '_children', '_x', '_y', '_width', '_height', '_top_margin', '_right_margin', '_bottom_margin',
-        '_left_margin', '_top_padding', '_right_padding', '_bottom_padding', '_left_padding',
+        'parent', '_children', '_x', '_y', '_width', '_height', '_top_margin', '_right_margin',
+        '_bottom_margin', '_left_margin', '_top_padding', '_right_padding', '_bottom_padding',
+        '_left_padding', '__context_properties', '__weakref__', '__is_abandoned',
     )
 
     def __init__(self):
@@ -42,6 +43,7 @@ class View:
         if self.parent:
             self.parent.append_child(self)
 
+        self.__is_abandoned: bool = False
         self._children: List[View] = []
         self._x: float = 0
         self._y: float = 0
@@ -58,6 +60,8 @@ class View:
         self._bottom_padding: float = 0
         self._left_padding: float = 0
 
+        self.__context_properties: Dict[type, object] = {}
+
     def __enter__(self):
         CONTAINER_STACK.append(self)
         return self
@@ -65,10 +69,13 @@ class View:
     def __exit__(self, exc_type, exc_val, exc_tb):
         CONTAINER_STACK.pop()
 
+    def get_context_property(self, property_type: type):
+        return self.__context_properties.get(property_type)
+
     def append_child(self, child):
         self._children.append(child)
 
-    def body(self):
+    def body(self) -> Optional['View']:
         return None
 
     def paint(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
@@ -82,7 +89,6 @@ class View:
 
         if body is None:
             self._children = old_children
-            del old_children
             self.paint(canvas, x + self._x, y + self._y, width, height)
         else:
             if not issubclass(type(body), View):
@@ -98,6 +104,24 @@ class View:
 
     def get_children(self) -> List['View']:
         return self._children
+
+    def get_bounding_rect(self) -> Rect:
+        body: Optional[View] = self.body()
+        if not body:
+            raise NotImplementedError(
+                'Override get_bounding_rect() when using custom draw() method.',
+            )
+
+        if not issubclass(type(body), View):
+            raise Exception('body() method must return a View.')
+
+        return body.get_bounding_rect()
+
+    # Properties
+
+    def context(self, value):
+        self.__context_properties[value.__class__] = value
+        return self
 
     def x(self, x):
         self._x = x
@@ -148,14 +172,3 @@ class View:
         self._bottom_padding = bottom or self._bottom_padding
         self._left_padding = left or self._left_padding
         return self
-
-    def get_bounding_rect(self) -> Rect:
-        body: Optional[View] = self.body()
-        if not body:
-            raise NotImplementedError('Override get_bounding_rect() when using custom draw() method.')
-
-        if not issubclass(type(body), View):
-            raise Exception('body() method must return a View.')
-
-        return body.get_bounding_rect()
-
