@@ -22,7 +22,6 @@ class App(metaclass=Singleton):
         self.context = None
 
     def draw(self):
-        gc.collect()
         GL.glClear(GL.GL_COLOR_BUFFER_BIT)
         with self.surface as canvas:
             start_time = time.time()
@@ -30,6 +29,7 @@ class App(metaclass=Singleton):
             # print('Draw time:', round((time.time() - start_time) * 1000, 5), 'ms')
             canvas.flush()
 
+        gc.collect()
         self.context.flush()
         glfw.swap_buffers(self.glfw_window)
 
