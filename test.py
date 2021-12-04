@@ -60,9 +60,10 @@ class RequestInfo(View):
 
 class InputTest(View):
     def body(self):
-        with Flex().padding(50).vertical() as root:
+        with Flex().padding(50).vertical().background(Color.blue()) as root:
+            Input().background(Color.red())
             Input()
-            Text('sample text SAMPLE TEXT').size(16).background(Color.green()).y(100)
+            Text('sample text SAMPLE TEXT').size(16).background(Color.green())
         return root
 
 
