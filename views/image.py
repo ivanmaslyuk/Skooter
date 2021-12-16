@@ -26,7 +26,7 @@ class Image(View):
             raise RuntimeError(f'Image could not be loaded: {self.__filename}')
         return image
 
-    def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
+    def paint(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
         x += self._x + self._left_margin + self._left_padding
         y += self._y + self._top_margin + self._top_padding
         image = self.load_image()

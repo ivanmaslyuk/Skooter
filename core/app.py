@@ -1,5 +1,6 @@
 import time
 import gc
+from typing import Optional
 
 import glfw
 import skia
@@ -7,7 +8,7 @@ from OpenGL import GL
 
 from .singleton import Singleton
 from .key_input import KeyInput
-from .base import View
+from .base import View, HOVER_MATRIX
 
 
 class App(metaclass=Singleton):
@@ -20,6 +21,7 @@ class App(metaclass=Singleton):
         self.glfw_window = None
         self.surface = None
         self.context = None
+        self.hovered_view: Optional[View] = None
 
     def draw(self):
         GL.glClear(GL.GL_COLOR_BUFFER_BIT)
@@ -33,17 +35,33 @@ class App(metaclass=Singleton):
         self.context.flush()
         glfw.swap_buffers(self.glfw_window)
 
-    def mouse_pos_callback(self, window, x: float, y: float):
+    def __mouse_pos_callback(self, window, x: float, y: float):
+        return
         if not (0 < x < self.window_width and 0 < y < self.window_height):
+            self.hovered_view = None
             return
 
-        # if 50 < x < 100 and 50 < y < 100:
-        #     glfw.set_cursor(window, glfw.create_standard_cursor(glfw.HAND_CURSOR))
-        # else:
-        #     glfw.set_cursor(window, None)
+        hovered_view: View = HOVER_MATRIX[int(x)][int(y)]
+        if hovered_view is not None:
+            hovered_view = hovered_view()
+        if self.hovered_view == hovered_view:
+            return
 
-    def mouse_button_callback(self, window, button, action, mods):
-        pass
+        if self.hovered_view is not None:
+            self.hovered_view.private.handle_hover(over=False)
+            self.hovered_view.invalidate_cache()
+
+        self.hovered_view = hovered_view
+        if hovered_view is not None:
+            hovered_view.private.handle_hover(over=True)
+            hovered_view.invalidate_cache()
+        # hovered_view.private.handle_hover(over=True)
+        # hovered_view.invalidate_cache()
+
+    def __mouse_button_callback(self, window, button, action, mods):
+        # Left click
+        if button == 0 and action == 0 and self.hovered_view:
+            self.hovered_view.private.handle_click()
 
     def create_glfw_window(self):
         if not glfw.init():
@@ -53,8 +71,10 @@ class App(metaclass=Singleton):
         glfw.make_context_current(self.glfw_window)
 
     def window_size_callback(self, window, width, height):
+        self.root_view.invalidate_cache(recursive=True)
         self.window_width = width
         self.window_height = height
+        # self.resize_hover_matrix() todo
         self.create_skia_surface()
         self.draw()
 
@@ -68,29 +88,37 @@ class App(metaclass=Singleton):
             int(self.window_height * height_scale),
             0,  # sampleCnt
             0,  # stencilBits
-            skia.GrGLFramebufferInfo(0, GL.GL_RGBA8)
+            skia.GrGLFramebufferInfo(0, GL.GL_RGBA8),
         )
+        GL.glViewport(0, 0, int(self.window_width * width_scale), int(self.window_height * height_scale))
         self.surface = skia.Surface.MakeFromBackendRenderTarget(
             self.context,
             backend_render_target,
             skia.kBottomLeft_GrSurfaceOrigin,
             skia.kRGBA_8888_ColorType,
-            skia.ColorSpace.MakeSRGB()
+            skia.ColorSpace.MakeSRGB(),
         )
         assert self.surface is not None
 
         self.surface.getCanvas().scale(*glfw.get_window_content_scale(self.glfw_window))
 
+    def resize_hover_matrix(self):
+        HOVER_MATRIX.clear()
+        for _ in range(self.window_height):
+            column = [None] * self.window_width
+            HOVER_MATRIX.append(column)
+
     def execute(self):
         try:
+            self.resize_hover_matrix()
             self.create_glfw_window()
             self.context = skia.GrDirectContext.MakeGL()
             self.create_skia_surface()
             GL.glClearColor(255, 255, 255, 255)
 
             glfw.set_window_size_callback(self.glfw_window, self.window_size_callback)
-            glfw.set_cursor_pos_callback(self.glfw_window, self.mouse_pos_callback)
-            glfw.set_mouse_button_callback(self.glfw_window, self.mouse_button_callback)
+            glfw.set_cursor_pos_callback(self.glfw_window, self.__mouse_pos_callback)
+            glfw.set_mouse_button_callback(self.glfw_window, self.__mouse_button_callback)
             glfw.set_key_callback(self.glfw_window, self.key_input.key_callback)
             glfw.set_char_callback(self.glfw_window, self.key_input.char_callback)
 

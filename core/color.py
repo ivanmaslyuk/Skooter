@@ -21,7 +21,7 @@ class Color:
         return skia.Color(self.__red, self.__green, self.__blue)
 
     @classmethod
-    def random(cls):
+    def random(cls) -> 'Color':
         return cls(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
 
     @classmethod
@@ -37,9 +37,9 @@ class Color:
         return cls(0, 0, 255)
 
     @classmethod
-    def white(cls):
+    def white(cls) -> 'Color':
         return cls(255, 255, 255)
 
     @classmethod
-    def black(cls):
+    def black(cls) -> 'Color':
         return cls(0, 0, 0)

@@ -140,7 +140,7 @@ class Flex(View):
         self._layout_cache = Layout(layout_items, flex_width, flex_height)
         return self._layout_cache
 
-    def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float) -> None:
+    def paint(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float) -> None:
         x += self._x + self._left_padding + self._left_margin
         y += self._y + self._top_padding + self._top_margin
 

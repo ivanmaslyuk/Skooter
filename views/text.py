@@ -14,7 +14,7 @@ class Text(View):
         self.__size = 14
         self.__background: Optional[Color] = None
 
-    def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
+    def paint(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
         x += self._x
         y += self._y
         paint = skia.Paint(Color=self.__color.as_skia_color())
@@ -39,7 +39,7 @@ class Text(View):
         line_height = abs(metrics.fTop) + abs(metrics.fBottom)
         return Rect(0, 0, width, line_height)
 
-    def color(self, color: str) -> 'Text':
+    def color(self, color: Color) -> 'Text':
         self.__color = color
         return self
 
