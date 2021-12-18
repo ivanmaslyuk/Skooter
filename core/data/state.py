@@ -10,9 +10,9 @@ class State:
         pass
 
     def __set__(self, view, value):
-        print('state set', value)
         self.__values[view] = value
-        view.invalidate_cache()
+        view.invalidate_body()
+        # todo request redraw, views shouldn't redraw every frame
 
     def __get__(self, view, owner):
         if view not in self.__values:

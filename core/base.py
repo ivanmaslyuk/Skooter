@@ -102,11 +102,10 @@ class View:
         'private', 'parent', '_children', '_x', '_y', '_width', '_height', '_top_margin',
         '_right_margin', '_bottom_margin', '_left_margin', '_top_padding', '_right_padding',
         '_bottom_padding', '_left_padding', '__context_properties', '__weakref__', '__on_hover',
-        '__on_click', '__picture', '__body',
+        '__on_click', '__body',
     )
 
     def __init__(self):
-        print('INIT VIEW')
         self.private = ViewPrivate(self)
         self.parent: View = CONTAINER_STACK[-1] if CONTAINER_STACK else None
         if self.parent:
@@ -132,7 +131,6 @@ class View:
         self.__context_properties: Dict[type, object] = {}
         self.__on_hover: Optional[Callable[[bool], None]] = None
         self.__on_click: Optional[Callable[[], None]] = None
-        self.__picture: Optional[skia.Picture] = None
 
     def __enter__(self):
         CONTAINER_STACK.append(self)
@@ -153,32 +151,26 @@ class View:
     def paint(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
         pass
 
-    def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
-        if self.__picture:
-            self.__picture.playback(canvas)  # noqa
-            return
-
-        # self.__add_to_hover_matrix(x, y, width, height)
-        old_children: List[View] = self._children
-        self._children = []
+    def __fetch_body(self):
         if not self.__body:
+            self._children = []
             with self:
                 self.__body: Optional[View] = self.body()
+        if self.__body is not None and not issubclass(type(self.__body), View):
+            raise Exception('body() method must return a View.')
 
-        picture_recorder = skia.PictureRecorder()
-        recorder_canvas = picture_recorder.beginRecording(width, height)
-        if self.__body is None:
-            self._children = old_children
-            self.paint(recorder_canvas, x + self._x, y + self._y, width, height)
+    @property
+    def __overrides_body(self) -> bool:
+        return 'body' in self.__class__.__dict__
+
+    def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
+        if self.__overrides_body:
+            self.__fetch_body()
+            self.__body.draw(canvas, x + self._x, y + self._y, width, height)
         else:
-            if not issubclass(type(self.__body), View):
-                raise Exception('body() method must return a View.')
-            self.__body.draw(recorder_canvas, x + self._x, y + self._y, width, height)
-        self.__picture = picture_recorder.finishRecordingAsPicture()
-        self.__picture.playback(canvas)
+            self.paint(canvas, x + self._x, y + self._y, width, height)
 
         self.draw_children(canvas, x + self._x, y + self._y, width, height)
-        # self.invalidate_cache()  # todo fixme delete!!!!!!
 
     def __add_to_hover_matrix(self, x: float, y: float, width: float, height: float):
         for row in range(int(x), int(x) + int(height)):
@@ -194,7 +186,6 @@ class View:
         if self.__on_hover or self.__on_click:
             pass
 
-
     def draw_children(self, canvas: skia.Surface, x: float, y: float, width: float, height: float):
         for view in self._children:
             view.draw(canvas, x, y, width, height)
@@ -203,22 +194,17 @@ class View:
         return self._children
 
     def get_bounding_rect(self) -> Rect:
-        body: Optional[View] = self.body()
-        if not body:
+        self.__fetch_body()
+        if not self.__body:
             raise NotImplementedError(
-                'Override get_bounding_rect() when using custom draw() method.',
+                'Override get_bounding_rect() when overriding paint() method.',
             )
 
-        if not issubclass(type(body), View):
-            raise Exception('body() method must return a View.')
+        return self.__body.get_bounding_rect()
 
-        return body.get_bounding_rect()
-
-    def invalidate_cache(self, recursive: bool = False):
-        self.__picture = None
-        if recursive:
-            for child in self._children:
-                child.invalidate_cache(recursive=True)
+    def invalidate_body(self):
+        self.__body = None
+        self._children = None
 
     # Properties
 

@@ -114,23 +114,15 @@ class TestFlex(View, KeyListener):
             Text(self.text)
         return root
 
-    def draw(self, canvas, x: float, y: float, width: float, height: float):
-        print('paint')
-        super(TestFlex, self).draw(canvas, x, y, width, height)
-
     def handle_char(self, char: str):
-        self.text += char
+        self.text = char
 
 
 class TestFlexWrapper(View):
     def body(self) -> Optional['View']:
         return TestFlex()
 
-    def draw(self, canvas, x: float, y: float, width: float, height: float):
-        super().draw(canvas, x, y, width, height)
-        self.invalidate_cache()
-
 
 if __name__ == '__main__':
-    app = App(RequestInfo(), window_width=500, window_height=500)
+    app = App(TestFlexWrapper(), window_width=500, window_height=500)
     app.execute()

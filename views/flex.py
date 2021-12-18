@@ -156,7 +156,16 @@ class Flex(View):
             )
 
         for layout_item in layout.items:
-            layout_item.view.draw(canvas, x + layout_item.x, y + layout_item.y, layout_item.width, layout_item.height)
+            layout_item.view.draw(
+                canvas,
+                x + layout_item.x,
+                y + layout_item.y,
+                layout_item.width,
+                layout_item.height,
+            )
+
+    def draw_children(self, canvas: skia.Surface, x: float, y: float, width: float, height: float):
+        pass  # todo убрать это метод вообще, рисовать детей только конкретной реализацией
 
     def get_bounding_rect(self) -> Rect:
         view_width = self._width or 500

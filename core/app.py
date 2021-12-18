@@ -71,7 +71,7 @@ class App(metaclass=Singleton):
         glfw.make_context_current(self.glfw_window)
 
     def window_size_callback(self, window, width, height):
-        self.root_view.invalidate_cache(recursive=True)
+        # self.root_view.invalidate_cache(recursive=True)
         self.window_width = width
         self.window_height = height
         # self.resize_hover_matrix() todo
