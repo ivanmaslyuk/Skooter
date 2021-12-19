@@ -132,11 +132,11 @@ class TestFlexWrapper(View):
 
 
 class ReactiveTest(View):
-    number = State(0)
+    number: int = State(0)
 
     def body(self) -> 'View':
         with Flex() as root:
-            Text(self.binding('number'))
+            Text(str(self.number))
             Button("Increment").on_click(self.button_clicked)
         return root
 
@@ -145,5 +145,5 @@ class ReactiveTest(View):
 
 
 if __name__ == '__main__':
-    app = App(InputTest(), window_width=500, window_height=500)
+    app = App(ReactiveTest(), window_width=500, window_height=500)
     app.execute()
