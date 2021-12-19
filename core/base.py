@@ -1,11 +1,11 @@
 import dataclasses
-import weakref
 from typing import Optional, List, Dict, Callable
 
 import skia
 
+from core.data import DataBinding, Binding
+
 CONTAINER_STACK = []
-HOVER_MATRIX = []
 HOVER_STACK = []
 
 
@@ -99,7 +99,7 @@ class ViewPrivate:
 
     @property
     def handles_hover(self) -> bool:
-        return self.__get_private_property('handles_hover')
+        return self.__get_private_property('on_hover') is not None
 
     def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
         draw_method = self.__get_private_property('draw')
@@ -114,11 +114,14 @@ class View:
         '__on_click', '__body', '__on_press',
     )
 
-    def __init__(self):
+    def __init__(self, **props):
         self.private = ViewPrivate(self)
         self.parent: View = CONTAINER_STACK[-1] if CONTAINER_STACK else None
         if self.parent:
             self.parent.append_child(self)
+
+        self.__fill_props(props)
+        self.__check_required_props_filled(props)
 
         self._children: List[View] = []
         self.__body: Optional[View] = None
@@ -161,6 +164,32 @@ class View:
     def paint(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
         pass
 
+    def binding(self, property_name: str) -> DataBinding:
+        if property_name not in vars(self.__class__):
+            raise RuntimeError(f'Cannot create binding for undefined property "{property_name}"')
+        return DataBinding(self, property_name)
+
+    def __binding_props(self) -> list:
+        return [key for key, value in vars(self.__class__).items() if type(value) == Binding]
+
+    def __fill_props(self, props):
+        binding_props = self.__binding_props()
+        for key, value in props.items():
+            if key not in vars(self.__class__):
+                raise RuntimeError(f'{self.__class__.__name__} received an unknown prop "{key}".')
+            if key in binding_props:
+                binding_descriptor: Binding = vars(self.__class__)[key]
+                binding_descriptor.set_data_binding(self, value)
+
+    def __check_required_props_filled(self, props):
+        required_props = set()
+        required_props.update(self.__binding_props())
+        for required_prop in required_props:
+            if required_prop not in props:
+                raise RuntimeError(
+                    f'Required prop "{required_prop}" was not passed to {self.__class__.__name__}',
+                )
+
     def __fetch_body(self):
         if self.__body:
             return
@@ -174,10 +203,6 @@ class View:
     def __overrides_body(self) -> bool:
         return 'body' in self.__class__.__dict__
 
-    @property
-    def __handles_hover(self) -> bool:
-        return self.__on_hover is not None
-
     def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
         self.__add_to_hover_stack(x, y, width, height)
         if self.__overrides_body:
@@ -187,20 +212,6 @@ class View:
             self.paint(canvas, x + self._x, y + self._y, width, height)
 
         self.draw_children(canvas, x + self._x, y + self._y, width, height)
-
-    # def __add_to_hover_matrix(self, x: float, y: float, width: float, height: float):
-    #     for row in range(int(x), int(x) + int(height)):
-    #         for col in range(int(y), int(y) + int(width)):
-    #             try:
-    #                 HOVER_MATRIX[row][col] = weakref.ref(self)
-    #             except IndexError:
-    #                 print('err', f'x={x}, y={y}, w={width}, h={height},'
-    #                              f' row={row}, col={col}')
-    #                 print(f'{self}     w={int(x) + int(width)}, h={int(y) + int(height)}')
-    #                 print(f'arr h={HOVER_MATRIX} w={HOVER_MATRIX[0]}')
-    #                 raise
-    #     if self.__on_hover or self.__on_click:
-    #         pass
 
     def __add_to_hover_stack(self, x, y, width, height):
         HOVER_STACK.insert(0, {

@@ -8,7 +8,7 @@ from OpenGL import GL
 
 from .singleton import Singleton
 from .key_input import KeyInput
-from .base import View, HOVER_MATRIX, HOVER_STACK
+from .base import View, HOVER_STACK
 
 
 def get_hovered_view(x: float, y: float) -> Optional[View]:

@@ -91,22 +91,13 @@ class RequestInfo(View):
 
 class InputTest(View):
     over_input = False
+    text = State("hello")
 
     def body(self):
-        with Flex().padding(50).vertical().background(Color.blue()) as root:
-            Input('abcde').background(Color.red())
-            Input('12345').on_click(self.handle_click).background(
-                Color.red() if self.over_input else Color.black(),
-            ).on_hover(self.hover_handler)
-            Text('sample text SAMPLE TEXT').size(16).background(Color.green())
-            # Rectangle(100, 100).background(Color.black()).on_hover(self.hover_handler)
+        with Flex().padding(50).vertical() as root:
+            Input(self.binding('text'))
+            Text(f'text: {self.text}')
         return root
-
-    def hover_handler(self, over: bool):
-        self.over_input = over
-
-    def handle_click(self):
-        print('input clicked!!!!!')
 
 
 class TestFlex(View, KeyListener):
@@ -145,7 +136,7 @@ class ReactiveTest(View):
 
     def body(self) -> 'View':
         with Flex() as root:
-            Text(self.number)
+            Text(self.binding('number'))
             Button("Increment").on_click(self.button_clicked)
         return root
 
@@ -154,5 +145,5 @@ class ReactiveTest(View):
 
 
 if __name__ == '__main__':
-    app = App(ReactiveTest(), window_width=500, window_height=500)
+    app = App(InputTest(), window_width=500, window_height=500)
     app.execute()
