@@ -10,18 +10,29 @@ from views.enums import Justify, Alignment
 from core.base import View
 
 
-class MyButton(View):
+class Button(View):
+    hovered = State(False)
+    pressed = State(False)
+
     def __init__(self, text):
         super().__init__()
         self.text = text
+        self.on_hover(self.handle_hover)
+        self.on_press(self.handle_press)
+
+    def handle_hover(self, over: bool):
+        self.hovered = over
+
+    def handle_press(self, pressed: bool):
+        self.pressed = pressed
 
     def body(self):
-        # with Rectangle(80, 40).background(Color('#00f')).radius(4) as root:
-        #     text = Text(self.text).color(Color.white())
-        #     text_bounding_rect = text.get_bounding_rect()
-        #     text.x(40 - text_bounding_rect.width / 2)
-        #     text.y(20 - text_bounding_rect.height / 2)
-        with Flex().align('center').justify('center').background(Color('#00f')) as root:
+        background_color = Color.blue()
+        if self.hovered:
+            background_color = Color('#0000aa')
+        if self.pressed:
+            background_color = Color('#000077')
+        with Flex().align('center').justify('center').background(background_color) as root:
             Text(self.text).color(Color.white()).height(40)
         return root
 
@@ -30,7 +41,7 @@ class Buttons(View):
     def body(self):
         with Flex().wrap(True).justify(Justify.SPACE_BETWEEN).padding(4) as root:
             for index in range(20):
-                MyButton(f'Button {index + 1}')
+                Button(f'Button {index + 1}')
         return root
 
 
@@ -62,7 +73,7 @@ class RequestInfo(View):
             with Flex().margin(12, 0).justify('space-between') as input_row:
                 url_field = Rectangle(width=20, height=None).background(Color('#eee')).radius(4).margin(right=12)
                 input_row.grow(url_field, 1)
-                MyButton('Send')
+                Button('Send')
 
             with Flex().vertical().background(Color('#eee')):
                 for key, value in self.query_params:
@@ -100,6 +111,7 @@ class InputTest(View):
 
 class TestFlex(View, KeyListener):
     text = State('initial')
+    hovered = State(False)
 
     __key_input: KeyInput = ContextProperty()
 
@@ -108,14 +120,19 @@ class TestFlex(View, KeyListener):
         self.__key_input.add_listener(self)
 
     def body(self) -> Optional[View]:
-        with Flex().vertical().background(Color('#eee')).margin(12, 16).debug() as root:
+        with Flex().vertical().background(Color('#eee')).margin(12, 16) as root:
             Rectangle(50, 50).background(Color.red()).radius(4)
-            Rectangle(100, 100).margin(top=20).background(Color.green()).radius(4).opacity(0.1)
+            Rectangle(100, 100).margin(top=20).background(
+                Color.green() if self.hovered else Color.black()
+            ).radius(4).on_hover(self.hover)
             Text(self.text)
         return root
 
     def handle_char(self, char: str):
         self.text = char
+
+    def hover(self, over):
+        self.hovered = over
 
 
 class TestFlexWrapper(View):
@@ -123,6 +140,19 @@ class TestFlexWrapper(View):
         return TestFlex()
 
 
+class ReactiveTest(View):
+    number = State(0)
+
+    def body(self) -> 'View':
+        with Flex() as root:
+            Text(self.number)
+            Button("Increment").on_click(self.button_clicked)
+        return root
+
+    def button_clicked(self):
+        self.number += 1
+
+
 if __name__ == '__main__':
-    app = App(TestFlexWrapper(), window_width=500, window_height=500)
+    app = App(ReactiveTest(), window_width=500, window_height=500)
     app.execute()

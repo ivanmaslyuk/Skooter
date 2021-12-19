@@ -92,6 +92,15 @@ class ViewPrivate:
         if handler:
             handler()
 
+    def handle_press(self, pressed: bool):
+        handler = self.__get_private_property('on_press')
+        if handler:
+            handler(pressed)
+
+    @property
+    def handles_hover(self) -> bool:
+        return self.__get_private_property('handles_hover')
+
     def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
         draw_method = self.__get_private_property('draw')
         draw_method(canvas, x, y, width, height)
@@ -102,7 +111,7 @@ class View:
         'private', 'parent', '_children', '_x', '_y', '_width', '_height', '_top_margin',
         '_right_margin', '_bottom_margin', '_left_margin', '_top_padding', '_right_padding',
         '_bottom_padding', '_left_padding', '__context_properties', '__weakref__', '__on_hover',
-        '__on_click', '__body',
+        '__on_click', '__body', '__on_press',
     )
 
     def __init__(self):
@@ -131,6 +140,7 @@ class View:
         self.__context_properties: Dict[type, object] = {}
         self.__on_hover: Optional[Callable[[bool], None]] = None
         self.__on_click: Optional[Callable[[], None]] = None
+        self.__on_press: Optional[Callable[[], None]] = None
 
     def __enter__(self):
         CONTAINER_STACK.append(self)
@@ -145,17 +155,18 @@ class View:
     def append_child(self, child):
         self._children.append(child)
 
-    def body(self) -> Optional['View']:
-        return None
+    def body(self) -> 'View':
+        pass
 
     def paint(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
         pass
 
     def __fetch_body(self):
-        if not self.__body:
-            self._children = []
-            with self:
-                self.__body: Optional[View] = self.body()
+        if self.__body:
+            return
+        self._children = []
+        with self:
+            self.__body: Optional[View] = self.body()
         if self.__body is not None and not issubclass(type(self.__body), View):
             raise Exception('body() method must return a View.')
 
@@ -163,7 +174,12 @@ class View:
     def __overrides_body(self) -> bool:
         return 'body' in self.__class__.__dict__
 
+    @property
+    def __handles_hover(self) -> bool:
+        return self.__on_hover is not None
+
     def draw(self, canvas: skia.Canvas, x: float, y: float, width: float, height: float):
+        self.__add_to_hover_stack(x, y, width, height)
         if self.__overrides_body:
             self.__fetch_body()
             self.__body.draw(canvas, x + self._x, y + self._y, width, height)
@@ -172,19 +188,28 @@ class View:
 
         self.draw_children(canvas, x + self._x, y + self._y, width, height)
 
-    def __add_to_hover_matrix(self, x: float, y: float, width: float, height: float):
-        for row in range(int(x), int(x) + int(height)):
-            for col in range(int(y), int(y) + int(width)):
-                try:
-                    HOVER_MATRIX[row][col] = weakref.ref(self)
-                except IndexError:
-                    print('err', f'x={x}, y={y}, w={width}, h={height},'
-                                 f' row={row}, col={col}')
-                    print(f'{self}     w={int(x) + int(width)}, h={int(y) + int(height)}')
-                    print(f'arr h={HOVER_MATRIX} w={HOVER_MATRIX[0]}')
-                    raise
-        if self.__on_hover or self.__on_click:
-            pass
+    # def __add_to_hover_matrix(self, x: float, y: float, width: float, height: float):
+    #     for row in range(int(x), int(x) + int(height)):
+    #         for col in range(int(y), int(y) + int(width)):
+    #             try:
+    #                 HOVER_MATRIX[row][col] = weakref.ref(self)
+    #             except IndexError:
+    #                 print('err', f'x={x}, y={y}, w={width}, h={height},'
+    #                              f' row={row}, col={col}')
+    #                 print(f'{self}     w={int(x) + int(width)}, h={int(y) + int(height)}')
+    #                 print(f'arr h={HOVER_MATRIX} w={HOVER_MATRIX[0]}')
+    #                 raise
+    #     if self.__on_hover or self.__on_click:
+    #         pass
+
+    def __add_to_hover_stack(self, x, y, width, height):
+        HOVER_STACK.insert(0, {
+            'view': self,
+            'min_x': x,
+            'min_y': y,
+            'max_x': x + width,
+            'max_y': y + height,
+        })
 
     def draw_children(self, canvas: skia.Surface, x: float, y: float, width: float, height: float):
         for view in self._children:
@@ -203,8 +228,10 @@ class View:
         return self.__body.get_bounding_rect()
 
     def invalidate_body(self):
+        if not self.__overrides_body:
+            return
         self.__body = None
-        self._children = None
+        self._children = []
 
     # Properties
 
@@ -282,4 +309,8 @@ class View:
 
     def on_click(self, handler: Callable[[], None]):
         self.__on_click = handler
+        return self
+
+    def on_press(self, handler: Callable[[bool], None]):
+        self.__on_press = handler
         return self
